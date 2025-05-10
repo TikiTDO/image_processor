@@ -95,6 +95,7 @@ docker-compose up --exit-code-from e2e frontend e2e
 - Explore code (`ls`, `grep -R`, etc.) before proposing changes.
 - Draft minimal patches with `apply_patch` and clear summaries.
 - Run all relevant tests (`go test`, `npm test`, `npx playwright test`) before finalizing.
+- When proposing external dependencies, check what the latest version are, and whether there are any known security issues
 
 **Don’t**
 - Introduce large refactors without approval.

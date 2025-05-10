@@ -3,12 +3,13 @@ module image-processor-backend
 go 1.24
 
 require (
-	github.com/gin-contrib/cors v1.3.1
-	github.com/gin-gonic/gin v1.9.1
-	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
- 	github.com/fsnotify/fsnotify v1.6.0
+   github.com/gin-contrib/cors v1.3.1
+   github.com/gin-gonic/gin v1.9.1
+   github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
+   github.com/fsnotify/fsnotify v1.6.0
 )
 
+// indirect dependencies
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect

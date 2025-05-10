@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
+import path from 'path';
 
 // Read backend URL from environment or default to localhost
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5700';
@@ -7,9 +9,22 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5700';
 export default defineConfig({
   server: {
     port: 5800,
+    // Enable HTTPS using backend self-signed certificates
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, '../backend/certs/key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, '../backend/certs/cert.pem')),
+    },
     proxy: {
-      '/api': BACKEND_URL,
-      '/images': BACKEND_URL,
+      '/api': {
+        target: BACKEND_URL.replace(/^http:/, 'https:'),
+        changeOrigin: true,
+        secure: false,
+      },
+      '/images': {
+        target: BACKEND_URL.replace(/^http:/, 'https:'),
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   // Load React plugin only for dev/build, skip for Vitest (test) to avoid native transforms

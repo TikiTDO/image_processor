@@ -30,7 +30,8 @@ backend/image-processor-backend
 .pnpm-store
 
 backend/.cache
-**/images/dialogs/**
-**/images/metadata/**
+backend/images
 tmpdir
 tmp
+# Local HTTPS certificates
+backend/certs/

@@ -96,11 +96,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
         <div className="grid">
           {images.map((img) => {
-            const bust = bustMap?.[img.id] || 0;
-            const key = `${img.id}-${img.timestamp}-${bust}`;
-            // Append timestamp and cache-bust parameters, preserving existing query params
-            const sep = img.url.includes('?') ? '&' : '?';
-            const url = `${img.url}${sep}t=${encodeURIComponent(img.timestamp)}&b=${bust}`;
+            // Use hash-based URL; cache invalidation via hash change without extra params
+            const key = `${img.id}-${img.timestamp}`;
+            const url = img.url;
             return (
               <SortableItem
                 key={key}

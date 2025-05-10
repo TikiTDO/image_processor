@@ -1,13 +1,13 @@
 package main
 
 import (
-	"image-processor-backend/internal/api"
-	"log"
-	"math/rand"
-	"os"
-	"time"
+   "log"
+   "math/rand"
+   "os"
+   "time"
 
-	"github.com/gin-gonic/gin"
+   "github.com/gin-gonic/gin"
+   "image-processor-backend/internal/api"
 )
 
 // SetImageDir configures the base directory for images (used in tests).
@@ -38,18 +38,18 @@ func main() {
 	if err := api.StartWatcher(imageDir); err != nil {
 		log.Println("Warning: file watcher not started:", err)
 	}
-	r := api.SetupRouter()
-	// Determine host and port for the HTTP server
-	host := os.Getenv("SERVER_HOST")
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = "5700"
-	}
-	addr := host + ":" + port
-	log.Printf("Server running on %s", addr)
-	// Start the server on the configured address
-	r.Run(addr)
+   r := api.SetupRouter()
+   // Determine host and port for the HTTP server
+   host := os.Getenv("SERVER_HOST")
+   if host == "" {
+       host = "127.0.0.1"
+   }
+   port := os.Getenv("SERVER_PORT")
+   if port == "" {
+       port = "5700"
+   }
+   addr := host + ":" + port
+   log.Printf("Server running on %s", addr)
+   // Start the server on the configured address
+   r.Run(addr)
 }
