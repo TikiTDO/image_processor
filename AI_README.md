@@ -1,167 +1,129 @@
-# AI Assistant Guide for the Image Processor Project
-<!-- New AI guide begins here -->
+<!-- AI_README.md: Guide for the AI assistant on the Image Processor project -->
+# AI Assistant Guide: Image Processor Project
+
+This document equips the AI assistant with everything needed to understand, explore, and modify the Image Processor codebase. It covers project structure, technologies, environment, workflows, testing, and AI-specific guidelines.
+
 ## 1. Intent & Base Prompt
-- **BASE_PROMPT.md**: official starting prompt.
-- **Goal**: Provide high-level guidance so the AI can explore, propose, and apply changes confidently.
+- Refer to **BASE_PROMPT.md** for the foundational system prompt.
+- **Objective**: Enable the AI to navigate, analyze, propose, and apply targeted, minimal changes with confidence and adherence to project conventions.
 
-## 2. Project Overview
-See [README.md](./README.md) for full details. In brief:
-- **Backend**: Go (Gin) server for image APIs and static files.
-- **Frontend**: React + TypeScript (Vite) UI with drag-and-drop and zoom.
-- **Orchestration**: `docker-compose.yml` for local dev and E2E tests.
-- **Theme Consistency**: It should work in both dark and light mode
+## 2. High-Level Overview
+- **Backend**: Go HTTP server (Gin) exposing REST and SSE endpoints, serving images and metadata.
+- **Frontend**: React + TypeScript (Vite) UI with drag-and-drop reordering, zoom, image dialogs, and speaker configuration.
+- **End-to-End Tests**: Playwright tests validating user interactions.
+- **Orchestration**: `docker-compose.yml` for cohesive local environment.
 
-## 3. Code Structure
-**backend/**
-- `main.go`: entrypoint and router.
-- `internal/api/`: HTTP handlers, routing, SSE watcher.
-- `internal/storage/`: metadata, EXIF, file-time helpers.
-- `images/`: sample image directory with `metadata.json`.
+## 3. Directory Structure
+### Root
+- `AI_README.md` ‑ AI-focused guide (this file).
+- `BASE_PROMPT.md` ‑ AI base prompt.
+- `README.md` ‑ human-oriented quickstart.
+- `docker-compose.yml` ‑ container definitions.
+- `.env` ‑ environment variables (e.g., `OPENAI_API_KEY`).
 
-**frontend/**
-- `src/`: React components, context, services, utilities.
-- `public/`: static assets (e.g., `dialog.json`).
-- `e2e/`, `playwright.config.ts`: Playwright tests and config.
+### Backend (`backend/`)
+- `main.go`: entrypoint, env setup, server launch.
+- `internal/api/`: routing and handlers for:
+  - `GET /api/images` (list)
+  - `GET /api/images/:id` (bytes)
+  - `POST /api/images` (upload)
+  - `POST /api/images/:id/reorder`
+  - `GET /api/dirs`
+  - `GET /api/path`
+  - `GET /api/updates` (SSE)
+  - `GET/POST /api/speakers`
+  - `GET/POST /api/images/:id/dialog`
+  - `GET /api/images/:id/description`
+- `internal/storage/`: metadata, EXIF, filename/time helpers.
+- `images/`: default and sample image dirs.
+- `certs/`: self-signed certs (used by frontend dev server).
 
-**root/**
- - `docker-compose.yml`: defines `backend`, `frontend`, and `e2e` services.
- - `BASE_PROMPT.md`: AI base prompt.
- - `README.md`: human-focused instructions.
+### Frontend (`frontend/`)
+- `src/`: React components, contexts, hooks, services, and utilities.
+- `vite.config.ts`: HTTPS dev server (port 5800), proxies `/api` & `/images` to `BACKEND_URL`.
+- `src/services/api.ts`: fetch wrappers for backend endpoints.
+- `e2e/` & `playwright.config.ts`: Playwright tests and config.
 
-## 3.1. Image API
-We now serve images by hash-based identifiers rather than raw filenames. Each image returned by `GET /api/images` includes:
-  - `id`: the SHA-256 hash of its filename (used as a stable identifier).
-  - `url`: an endpoint to fetch the binary image data.
-Filenames on disk continue to include timestamp prefixes (and may change on reordering), but the `id` remains consistent across renames.
+## 4. Configuration & Environment
+### Backend Environment Variables
+| Name          | Default       | Purpose                                |
+|---------------|---------------|----------------------------------------|
+| IMAGE_DIR     | `images`      | Base image directory                   |
+| DEFAULT_PATH  | ``            | Initial subdirectory path              |
+| SERVER_HOST   | `127.0.0.1`   | Host to bind                           |
+| SERVER_PORT   | `5700`        | Port for HTTP server                   |
 
-### Key Endpoints
-- `GET /api/images` (optional query `?path=<subdir>`)
-  • Returns JSON list of images in the directory:
-    ```json
-    [
-      { "id": "<hash>", "url": "/api/images/<hash>?path=<subdir>", "timestamp": "<RFC3339>" },
-      ...
-    ]
-    ```
-- `GET /api/images/:id` (optional query `?path=<subdir>`)
-  • Serves the raw image bytes for the given `id` (hash).
- - `POST /api/images/:id/reorder` (optional query `?path=<subdir>`)
-  • Reorders the image (the underlying filename/timestamp prefix may change).
+### Frontend Environment Variables
+| Name             | Default                      | Purpose                                    |
+|------------------|------------------------------|--------------------------------------------|
+| BACKEND_URL      | `https://localhost:5700`      | Proxy target for `/api` & `/images`        |
+| VITE_API_BASE_URL| *(optional)*                | Client‐side API base URL (absolute calls)   |
+| VITE_WS_URL      | *(optional)*                | SSE/WebSocket URL for updates               |
 
-Note: All endpoints (API, static images, SSE) now run over HTTPS (TLS) by default.
+> Note: Vite exposes only `VITE_` prefixed vars to client via `import.meta.env`.
 
-## 3.2. HTTPS & HTTP/3 (QUIC)
-- The backend auto-generates a self-signed certificate into `backend/certs/` on startup.
-- Docker Compose exposes both TCP and UDP on port 5700:
-  • TCP 5700: HTTP/1.1 and HTTP/2 over TLS
-  • UDP 5700: HTTP/3 (QUIC) support
-- The development frontend mounts the same certs and serves over HTTPS (https://localhost:5800).
-- Frontend proxies `/api` and `/images` to the backend’s HTTPS endpoint; the Vite config is set with `secure: false` to accept the self-signed cert.
-
-## 4. Environment & Configuration
-Create a `.env` file at the root or set environment variables directly:
-```env
-# Backend
-IMAGE_DIR=images          # Base images directory
-DEFAULT_PATH=             # Initial subdirectory path (empty = root)
-SERVER_HOST=0.0.0.0       # Address for server to listen on (default)
-SERVER_PORT=5700          # Port for server to listen on (default)
-
-# Frontend (Vite)
-VITE_API_BASE_URL=https://localhost:5700/api  # use HTTPS for all API calls
-VITE_WS_URL=https://localhost:5700/api/updates  # SSE over HTTPS
-
-// Ensure local Node/NPM match project engines:
-NODE_VERSION=22.x       # Frontend requires Node 22.x
-NPM_VERSION=11.3.x      # npm enforced via .npmrc (engine-strict)
-```
-
-## 5. Running & Testing
-**Backend**
+## 5. Running Locally
+### Backend
 ```bash
 cd backend
 go mod tidy
-go run main.go            # http://localhost:5700
-# Run unit tests; if /tmp or default cache is not writable, override build dirs:
+# For tests in restricted envs:
 mkdir -p .cache/go-build tmpdir
 export GOCACHE=$(pwd)/.cache/go-build TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir
-go test ./...             # run unit tests
+go run main.go         # https://127.0.0.1:5700
+go test ./...          # unit tests
 ```
 
-**Frontend**
+### Frontend
 ```bash
 cd frontend
-npm install               # requires Node 22.x and npm 11.3.x
-npm run dev               # https://localhost:5800 (accept untrusted self-signed cert)
-npm test                  # Vitest
+npm install            # or yarn/pnpm
+npm run dev            # https://localhost:5800
+npm test               # Vitest
 ```
 
-**End-to-End (E2E)**
+### End-to-End
 ```bash
-npx playwright test --ignore-certificate-errors   # tests against HTTPS dev server
+npx playwright test --ignore-certificate-errors
 ```
-or via Docker Compose:
+
+## 6. Docker Compose
 ```bash
-docker-compose up --exit-code-from frontend frontend
+docker-compose up              # starts backend (5700), frontend (5800)
+# E2E (optional):
+docker-compose up --exit-code-from e2e frontend e2e
 ```
+Services:
+- **backend**: Go + reflex hot-reload on 5700
+- **frontend**: Vite HTTPS dev server on 5800
+- **e2e**: Playwright runner (if enabled)
 
-## 6. AI Constraints & Best Practices
-**Do**
-- Ask clarifying questions when requirements are ambiguous.
-- Explore code (`ls`, `grep -R`, etc.) before proposing changes.
-- Draft minimal patches with `apply_patch` and clear summaries.
-- Run all relevant tests (`go test`, `npm test`, `npx playwright test`) before finalizing.
-- When proposing external dependencies, check what the latest version are, and whether there are any known security issues
+## 7. AI Development Workflow
+### Exploration
+- Use `ls`, `grep -R`, and running tests to understand code.
 
-**Don’t**
-- Introduce large refactors without approval.
-- Break existing tests or IDE/CI workflows.
-- Add new licenses or heavy dependencies without need.
-- Hardcode environment-specific values.
-
-## 7. Patch Workflow Example
-1. **Explore**
-   ```bash
-   ls backend/internal/api
-   grep -R "reorder" -n backend
-   ```
-2. **Draft Patch**
+### Patching
+1. Draft minimal `apply_patch` diffs:
    ```bash
    apply_patch << 'EOF'
    *** Begin Patch
-   *** Update File: backend/internal/api/handlers.go
-   @@ -123,7 +123,7 @@ func reorderHandler(c *gin.Context) {
-        // ...
--   -    doSomethingWrong()
-+   +    doSomethingBetter()
-   }
+   *** Update File: path/to/file
+   @@ -old,+new @@
+   -oldLine
+   +newLine
    *** End Patch
    EOF
    ```
-3. **Run Tests**
-   ```bash
-   cd backend && go test ./...
-   cd frontend && npm test
-   npx playwright test
-   ```
-4. **Document**: Summarize changes and confirm tests are passing.
+2. Run all tests: `go test`, `npm test`, `npx playwright test`.
 
-## 8. Troubleshooting
-- **Hot-reload issues**: restart `npm run dev` after renames.
-- **metadata.json parse errors**: validate JSON or fix ordering via UI.
-- **SSE disconnect**: check `VITE_WS_URL` and CORS.
-- **Missing `IMAGE_DIR`**: ensure env var is set or directory exists.
+### Best Practices
+- Fix root causes; avoid broad refactors.
+- Preserve existing tests and workflows.
+- Parameterize ports/URLs; avoid hardcoding.
+- Document all non-obvious changes.
 
-## 9. CI & Deployment (Future)
-While no CI is currently configured, ensure changes satisfy:
-```
-# Backend
-go test ./...
+### Constraints
+- Ask clarifying questions if needed.
+- No new heavy dependencies or license headers.
 
-# Frontend
-npm install && npm run lint && npm run build
-
-# E2E
-npx playwright test
-```
-<!-- New AI guide ends here -->
+<!-- EOF: AI assistant guide -->

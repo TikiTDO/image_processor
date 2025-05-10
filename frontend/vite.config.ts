@@ -16,12 +16,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: BACKEND_URL.replace(/^http:/, 'https:'),
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
       '/images': {
-        target: BACKEND_URL.replace(/^http:/, 'https:'),
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },

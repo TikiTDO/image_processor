@@ -58,7 +58,8 @@ const AppContent: React.FC = () => {
   const [rawDescription, setRawDescription] = useState<string>('');
   const [descMode, setDescMode] = useState<'text' | 'dialog'>('text');
   const [showSpeakerConfig, setShowSpeakerConfig] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'read' | 'edit'>('read');
+  // Global edit mode: when true, all dialog panels are editable
+  const [editMode, setEditMode] = useState<boolean>(false);
   const { colors: speakerColors, names: speakerNames } = useSpeakerContext();
   const suppressClicks = useRef(false);
   // Handlers to navigate lightbox images
@@ -152,15 +153,13 @@ const AppContent: React.FC = () => {
       getImageDialog(selectedId, path)
         .then((dlg) => {
           if (dlg && dlg.length > 0) {
-            // Existing dialog: show in read mode
+            // Existing dialog: switch to dialog view
             setSelectedDialog(dlg);
-            setDialogMode('read');
             setDescMode('dialog');
           } else {
-            // No dialog: initialize with one narrator line and open edit mode
+            // No dialog: initialize with one narrator line
             const initDialog = ['0:'];
             setSelectedDialog(initDialog);
-            setDialogMode('edit');
             setDescMode('dialog');
             // Persist initial dialog entry
             setImageDialog(selectedId, initDialog, path)
@@ -169,10 +168,10 @@ const AppContent: React.FC = () => {
         })
         .catch((err) => console.error('Error loading dialog:', err));
     } else {
+      // No image selected: return to description view
       setSelectedDialog([]);
       setRawDescription('');
       setDescMode('text');
-      setDialogMode('read');
     }
   }, [selectedId, path]);
 
@@ -218,6 +217,9 @@ const AppContent: React.FC = () => {
         ))}
         <button onClick={() => setShowSpeakerConfig(true)}>
           Speakers...
+        </button>
+        <button onClick={() => setEditMode((v) => !v)}>
+          {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
         </button>
       </div>
       <ImageGrid
@@ -279,7 +281,6 @@ const AppContent: React.FC = () => {
                     setSelectedDialog(initDialog);
                     setImageDialog(selectedId, initDialog, path);
                     setDescMode('dialog');
-                    setDialogMode('edit');
                   }}
                 >
                   Switch to dialog mode
@@ -287,13 +288,8 @@ const AppContent: React.FC = () => {
               </div>
             ) : (
               <div className="dialog-sidebar">
-                <button
-                  className="dialog-toggle"
-                  onClick={(e) => { e.stopPropagation(); setDialogMode(dialogMode === 'read' ? 'edit' : 'read'); }}
-                >
-                  {dialogMode === 'read' ? '✏️' : '✅'}
-                </button>
-                {dialogMode === 'read' ? (
+                {/* Global edit mode: show edit fields when enabled, otherwise read-only */}
+                {!editMode ? (
                   <div className="dialog-read">
                     {selectedDialog.map((line, idx) => {
                       const parts = line.split(':');
