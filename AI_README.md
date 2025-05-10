@@ -34,6 +34,8 @@ Create a `.env` file at the root or set environment variables directly:
 # Backend
 IMAGE_DIR=images          # Base images directory
 DEFAULT_PATH=             # Initial subdirectory path (empty = root)
+SERVER_HOST=0.0.0.0       # Address for server to listen on (default)
+SERVER_PORT=5700          # Port for server to listen on (default)
 
 # Frontend (Vite)
 VITE_API_BASE_URL=http://localhost:5700/api
