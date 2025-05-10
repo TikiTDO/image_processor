@@ -15,6 +15,12 @@ func hashString(s string) string {
    return hex.EncodeToString(sum[:])
 }
 
+// HashString returns the SHA256 hex digest of the given string.
+// This exported wrapper allows other packages to compute the same hash used for dialog and metadata storage.
+func HashString(s string) string {
+   return hashString(s)
+}
+
 // LoadDialogFile reads dialog entries for the given id from a file-based store.
 // Dialog files are organized under baseDir/dialogs/<first two hash chars>/<fullhash>.json.
 func LoadDialogFile(baseDir, id string) ([]string, error) {

@@ -41,6 +41,8 @@ func SetupRouter() *gin.Engine {
    // Image upload and listing
    r.POST("/api/images", handleUpload)
    r.GET("/api/images", handleGetImages)
+   // Serve image bytes by hash ID
+   r.GET("/api/images/:id", handleGetImage)
    r.GET("/api/dirs", handleGetDirs)
    r.POST("/api/images/:id/reorder", handleReorder)
    // Static file serving with ETag

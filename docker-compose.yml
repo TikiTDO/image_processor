@@ -14,6 +14,7 @@ services:
       # Set IMAGE_DIR to the project root to allow navigating all image subfolders
       - IMAGE_DIR=/app/images
       - GOCACHE=/app/.cache/go-build
+      - SERVER_HOST=0.0.0.0
     command:
       - sh
       - -c

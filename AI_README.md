@@ -24,9 +24,29 @@ See [README.md](./README.md) for full details. In brief:
 - `e2e/`, `playwright.config.ts`: Playwright tests and config.
 
 **root/**
-- `docker-compose.yml`: defines `backend`, `frontend`, and `e2e` services.
-- `BASE_PROMPT.md`: AI base prompt.
-- `README.md`: human-focused instructions.
+ - `docker-compose.yml`: defines `backend`, `frontend`, and `e2e` services.
+ - `BASE_PROMPT.md`: AI base prompt.
+ - `README.md`: human-focused instructions.
+
+## 3.1. Image API
+We now serve images by hash-based identifiers rather than raw filenames. Each image returned by `GET /api/images` includes:
+  - `id`: the SHA-256 hash of its filename (used as a stable identifier).
+  - `url`: an endpoint to fetch the binary image data.
+Filenames on disk continue to include timestamp prefixes (and may change on reordering), but the `id` remains consistent across renames.
+
+### Key Endpoints
+- `GET /api/images` (optional query `?path=<subdir>`)
+  • Returns JSON list of images in the directory:
+    ```json
+    [
+      { "id": "<hash>", "url": "/api/images/<hash>?path=<subdir>", "timestamp": "<RFC3339>" },
+      ...
+    ]
+    ```
+- `GET /api/images/:id` (optional query `?path=<subdir>`)
+  • Serves the raw image bytes for the given `id` (hash).
+- `POST /api/images/:id/reorder` (optional query `?path=<subdir>`)
+  • Reorders the image (the underlying filename/timestamp prefix may change).
 
 ## 4. Environment & Configuration
 Create a `.env` file at the root or set environment variables directly:

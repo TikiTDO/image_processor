@@ -5,6 +5,7 @@ import (
     "net/http"
     "net/http/httptest"
     "testing"
+    "time"
 
     app "image-processor-backend"
 )
@@ -28,10 +29,18 @@ func TestGetImagesSorted(t *testing.T) {
     if len(imgs) < 2 {
         t.Skip("not enough images to test sorting")
     }
-    // Ensure images are sorted by filename (lexical order)
+    // Ensure images are sorted by timestamp ascending
     for i := 1; i < len(imgs); i++ {
-        if imgs[i].ID < imgs[i-1].ID {
-            t.Errorf("images not sorted by ID: %s coming after %s", imgs[i].ID, imgs[i-1].ID)
+        prevT, err1 := time.Parse(time.RFC3339Nano, imgs[i-1].Timestamp)
+        if err1 != nil {
+            t.Fatalf("parse previous timestamp: %v", err1)
+        }
+        currT, err2 := time.Parse(time.RFC3339Nano, imgs[i].Timestamp)
+        if err2 != nil {
+            t.Fatalf("parse current timestamp: %v", err2)
+        }
+        if currT.Before(prevT) {
+            t.Errorf("images not sorted by timestamp: %s coming before %s", imgs[i].Timestamp, imgs[i-1].Timestamp)
         }
     }
 }

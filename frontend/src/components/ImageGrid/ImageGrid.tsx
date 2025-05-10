@@ -98,7 +98,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
           {images.map((img) => {
             const bust = bustMap?.[img.id] || 0;
             const key = `${img.id}-${img.timestamp}-${bust}`;
-            const url = `${img.url}?t=${encodeURIComponent(img.timestamp)}&b=${bust}`;
+            // Append timestamp and cache-bust parameters, preserving existing query params
+            const sep = img.url.includes('?') ? '&' : '?';
+            const url = `${img.url}${sep}t=${encodeURIComponent(img.timestamp)}&b=${bust}`;
             return (
               <SortableItem
                 key={key}

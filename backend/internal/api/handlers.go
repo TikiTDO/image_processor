@@ -7,6 +7,7 @@ import (
    "log"
    "math/rand"
    "net/http"
+   "net/url"
    "os"
    "path/filepath"
    "sort"
@@ -21,6 +22,24 @@ import (
 type SpeakerMeta struct {
    SpeakerColors map[string]string `json:"speaker_colors"`
    SpeakerNames  map[string]string `json:"speaker_names"`
+}
+
+// findFilenameByHash searches for a file in baseDir whose SHA-256 hex digest of its filename matches the given hash.
+// Returns the original filename if found, or empty string if not.
+func findFilenameByHash(baseDir, hash string) (string, error) {
+   files, err := ioutil.ReadDir(baseDir)
+   if err != nil {
+       return "", err
+   }
+   for _, fi := range files {
+       if fi.IsDir() {
+           continue
+       }
+       if storage.HashString(fi.Name()) == hash {
+           return fi.Name(), nil
+       }
+   }
+   return "", nil
 }
 
 // ImageResponse is sent to the client for each image.
@@ -103,13 +122,23 @@ func handleSetSpeakers(c *gin.Context) {
 // handleGetDialog retrieves per-image dialog from metadata.
 func handleGetDialog(c *gin.Context) {
    sub := c.Query("path")
-   id := c.Param("id")
+   idHash := c.Param("id")
+   // map hash ID to current filename
    baseDir := ImageDir
    if sub != "" {
        baseDir = filepath.Join(ImageDir, sub)
    }
+   filename, err := findFilenameByHash(baseDir, idHash)
+   if err != nil {
+       c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resolve image ID"})
+       return
+   }
+   if filename == "" {
+       c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+       return
+   }
    // load dialog entries from file-based storage
-   entries, err := storage.LoadDialogFile(baseDir, id)
+   entries, err := storage.LoadDialogFile(baseDir, filename)
    if err != nil {
        c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load dialog"})
        return
@@ -120,18 +149,28 @@ func handleGetDialog(c *gin.Context) {
 // handleSetDialog updates per-image dialog in metadata.
 func handleSetDialog(c *gin.Context) {
    sub := c.Query("path")
-   id := c.Param("id")
+   idHash := c.Param("id")
+   // map hash ID to current filename
+   baseDir := ImageDir
+   if sub != "" {
+       baseDir = filepath.Join(ImageDir, sub)
+   }
+   filename, err := findFilenameByHash(baseDir, idHash)
+   if err != nil {
+       c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resolve image ID"})
+       return
+   }
+   if filename == "" {
+       c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+       return
+   }
    var req struct { Dialog []string `json:"dialog"` }
    if err := c.ShouldBindJSON(&req); err != nil {
        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
        return
    }
-   baseDir := ImageDir
-   if sub != "" {
-       baseDir = filepath.Join(ImageDir, sub)
-   }
    // save dialog entries to file-based storage
-   if err := storage.SaveDialogFile(baseDir, id, req.Dialog); err != nil {
+   if err := storage.SaveDialogFile(baseDir, filename, req.Dialog); err != nil {
        c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save dialog"})
        return
    }
@@ -186,6 +225,40 @@ func handleGetImages(c *gin.Context) {
    sub := c.Query("path")
    imgs := getImages(sub)
    c.JSON(http.StatusOK, imgs)
+}
+
+// handleGetImage serves the binary image data for a given hash ID.
+func handleGetImage(c *gin.Context) {
+   sub := c.Query("path")
+   idHash := c.Param("id")
+   baseDir := ImageDir
+   if sub != "" {
+       baseDir = filepath.Join(ImageDir, sub)
+   }
+   // map hash ID to current filename
+   filename, err := findFilenameByHash(baseDir, idHash)
+   if err != nil {
+       c.Status(http.StatusInternalServerError)
+       return
+   }
+   if filename == "" {
+       c.Status(http.StatusNotFound)
+       return
+   }
+   fullPath := filepath.Join(baseDir, filename)
+   info, err := os.Stat(fullPath)
+   if err != nil {
+       c.Status(http.StatusNotFound)
+       return
+   }
+   etag := fmt.Sprintf("\"%x-%x\"", info.ModTime().UnixNano(), info.Size())
+   c.Header("ETag", etag)
+   c.Header("Cache-Control", "no-cache, must-revalidate")
+   if match := c.GetHeader("If-None-Match"); match != "" && match == etag {
+       c.Status(http.StatusNotModified)
+       return
+   }
+   c.File(fullPath)
 }
 
 // handleGetDirs lists subdirectories under a given path.
@@ -260,7 +333,23 @@ func handleReorder(c *gin.Context) {
        return
    }
    sub := c.Query("path")
-   id := c.Param("id")
+   // map hash ID to current filename before reordering
+   idHash := c.Param("id")
+   dirPath := ImageDir
+   if sub != "" {
+       dirPath = filepath.Join(ImageDir, sub)
+   }
+   filename, err := findFilenameByHash(dirPath, idHash)
+   if err != nil {
+       c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resolve image ID"})
+       return
+   }
+   if filename == "" {
+       c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+       return
+   }
+   // use resolved filename as ID for reordering
+   id := filename
    images := getImages(sub)
    idToTs := make(map[string]time.Time)
    for _, im := range images {
@@ -406,7 +495,9 @@ func handleReorder(c *gin.Context) {
            }
        }
    }
-   c.JSON(http.StatusOK, ReorderResponse{ID: movedNewName, Timestamp: movedTSStr})
+   // Return the new hash ID for the moved file
+   newID := storage.HashString(movedNewName)
+   c.JSON(http.StatusOK, ReorderResponse{ID: newID, Timestamp: movedTSStr})
 }
 
 // getImages scans the given subdirectory and returns sorted images.
@@ -423,10 +514,8 @@ func getImages(sub string) []ImageResponse {
    }
    type img struct { id string; ts time.Time; url string }
    var imgs []img
-   baseURL := "/images"
-   if sub != "" {
-       baseURL += "/" + sub
-   }
+   // Build base API URL for fetching images by hash ID
+   baseAPI := "/api/images"
    for _, fi := range files {
        if fi.IsDir() {
            continue
@@ -454,9 +543,19 @@ func getImages(sub string) []ImageResponse {
        } else {
            t = storage.GetFileTimestamp(full)
        }
-       imgs = append(imgs, img{id: fi.Name(), ts: t, url: baseURL + "/" + fi.Name()})
+       // compute hash ID for this filename
+       hash := storage.HashString(fi.Name())
+       // construct URL endpoint for this image
+       var imgURL string
+       if sub != "" {
+           imgURL = fmt.Sprintf("%s/%s?path=%s", baseAPI, hash, url.QueryEscape(sub))
+       } else {
+           imgURL = fmt.Sprintf("%s/%s", baseAPI, hash)
+       }
+       imgs = append(imgs, img{id: hash, ts: t, url: imgURL})
    }
-   sort.Slice(imgs, func(i, j int) bool { return imgs[i].id < imgs[j].id })
+   // sort images by timestamp ascending
+   sort.Slice(imgs, func(i, j int) bool { return imgs[i].ts.Before(imgs[j].ts) })
    resp := make([]ImageResponse, len(imgs))
    for i, im := range imgs {
        resp[i] = ImageResponse{ID: im.id, URL: im.url, Timestamp: im.ts.Format(time.RFC3339Nano)}
