@@ -1,0 +1,22 @@
+### Playwright E2E Test Runner
+FROM mcr.microsoft.com/playwright:v1.52.0-noble
+
+# Create app directory
+WORKDIR /app
+
+# Install project dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+
+# Copy source, tests, and configuration
+COPY . .
+
+# Install Playwright browsers and dependencies
+RUN npx playwright install --with-deps
+
+# Environment for CI mode and overriding baseURL in config
+ENV CI=true
+ENV BASE_URL=http://frontend:5800
+
+# Run E2E tests
+CMD ["pnpm", "run", "test:e2e"]

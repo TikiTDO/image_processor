@@ -1,0 +1,12 @@
+{
+  "speaker_colors": {
+    "0": "#333333",
+    "1": "#FF5722",
+    "2": "#007BFF"
+  },
+  "dialog": [
+    { "speaker": 0, "text": "Welcome to the image gallery." },
+    { "speaker": 1, "text": "Feel free to upload and reorder images." },
+    { "speaker": 2, "text": "Drag files anywhere to add new images." }
+  ]
+}

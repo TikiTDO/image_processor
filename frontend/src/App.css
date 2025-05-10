@@ -1,0 +1,467 @@
+.zoom-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.8;
+  z-index: 10;
+  transition: opacity 0.2s;
+  font-size: 1.2em;
+}
+.item:hover .zoom-icon {
+  opacity: 1;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+}
+/* Controls bar at top for zoom and path selection */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+/* Path picker styling */
+.path-picker {
+  position: relative;
+  display: inline-block;
+}
+.path-btn {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.path-btn:hover {
+  background: #e0e0e0;
+}
+.path-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  margin-top: 4px;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.path-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.path-dropdown li {
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.path-dropdown li:hover {
+  background: #f5f5f5;
+}
+.controls input {
+  width: 200px;
+  padding: 4px 8px;
+  font-size: 1em;
+}
+/* Zoom buttons styling */
+.zoom-btn {
+  width: 44px;
+  height: 44px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.5em;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+/* Zoom level dropdown styling */
+.zoom-select {
+  background-color: #e8e8e8;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  padding: 4px 24px 4px 8px;
+  font-size: 1em;
+  line-height: 1;
+  min-width: 60px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6'><path fill='%23555' d='M0,0 L8,0 L4,6 Z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 8px 6px;
+  transition: background-color 0.2s;
+}
+.zoom-select:hover {
+  background-color: #d8d8d8;
+}
+.zoom-select:active {
+  background-color: #c8c8c8;
+}
+.zoom-btn:hover {
+  background: #e0e0e0;
+}
+.zoom-btn:active {
+  background: #d0d0d0;
+}
+.controls input {
+  width: 200px;
+  padding: 2px 4px;
+}
+
+.item {
+  width: 150px;
+  margin: 5px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  cursor: grab;
+  /* Prevent default touch scrolling during drag */
+  touch-action: none;
+  background: #fff;
+  position: relative;
+}
+
+.item img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.filename {
+  /* Filename label below image */
+  font-size: 0.9em;
+  color: #333;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+/* Preview of first dialog line below filename in grid items */
+.dialog-preview {
+  font-size: 0.8em;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+/* Theme support */
+body {
+  background: #fafafa;
+  color: #111;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #111;
+    color: #eee;
+  }
+  .item {
+    background: #222;
+    border-color: #444;
+  }
+  .filename {
+    color: #ccc;
+  }
+  .lightbox {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  .lightbox img {
+    border-color: #eee;
+    background: #222;
+  }
+  .zoom-icon {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+  }
+  /* Dark mode overrides for path picker dropdown */
+  .path-btn {
+    background: #333;
+    border-color: #555;
+    color: #eee;
+  }
+  .path-btn:hover {
+    background: #444;
+  }
+  .path-dropdown {
+    background: #222;
+    border-color: #555;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+  .path-dropdown li {
+    color: #eee;
+  }
+  .path-dropdown li:hover {
+    background: #333;
+  }
+  /* Dialog preview under filename in grid */
+  .dialog-preview {
+    font-size: 0.8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding-top: 2px;
+  }
+}
+
+/* Lightbox overlay for enlarged image */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+/* Filename banner at top of lightbox */
+.filename-banner {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  max-width: 90vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1001;
+  font-weight: bold;
+}
+/* Lightbox navigation arrows */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  z-index: 1001;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox-nav.prev {
+  left: 1rem;
+}
+.lightbox-nav.next {
+  right: 1rem;
+}
+@media (prefers-color-scheme: dark) {
+  .lightbox-nav {
+    background: rgba(34, 34, 34, 0.8);
+    color: #eee;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .filename-banner {
+    background: rgba(34, 34, 34, 0.9);
+    color: #eee;
+  }
+}
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  border: 2px solid #fff;
+  background: #fff;
+}
+/* Lightbox inner container with content and sidebar */
+.lightbox-inner {
+  display: flex;
+  /* Stretch side panels to match image height */
+  align-items: stretch;
+  gap: 1rem;
+}
+/* Description panel (plain text mode) */
+.description-panel {
+  max-width: 400px;
+  background: rgba(255,255,255,0.9);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-y: auto;
+}
+.description-text {
+  white-space: pre-wrap;
+  margin-bottom: 0.5rem;
+}
+
+.dialog-sidebar {
+  max-width: 400px;
+  background: rgba(255,255,255,0.9);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-y: auto;
+  max-height: 90vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.dialog-toggle {
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0.25rem;
+  margin-bottom: 0.5rem;
+  z-index: 1;
+}
+
+.dialog-read {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dialog-line {
+  display: flex;
+  flex-direction: column;
+  margin: 0.5rem 0;
+}
+
+.speaker-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.dialog-text {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+
+
+/* Edit mode dialog cards */
+.dialog-edit-card {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: #fafafa;
+}
+
+.dialog-edit-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.speaker-button {
+  border: none;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0.8;
+}
+
+.speaker-button.selected {
+  box-shadow: 0 0 0 2px #000;
+  opacity: 1;
+}
+
+.dialog-edit-card-body {
+  display: flex;
+}
+
+.dialog-textarea {
+  flex: 1;
+  min-height: 3em;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 0.5rem;
+  resize: none;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Dark mode adjustments for edit cards */
+@media (prefers-color-scheme: dark) {
+  .dialog-edit-card {
+    background: #222;
+    border-color: #444;
+  }
+  .speaker-button {
+    opacity: 0.7;
+  }
+  .speaker-button.selected {
+    box-shadow: 0 0 0 2px #eee;
+  }
+  .dialog-textarea {
+    background: #333;
+    color: #eee;
+    border-color: #555;
+  }
+}
+
+/* Modal overlay for speaker configuration */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  width: 400px;
+  position: relative;
+  color: inherit;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: #222;
+    color: #eee;
+  }
+  /* Theme override for dialog panels */
+  .description-panel,
+  .dialog-sidebar {
+    background: rgba(34, 34, 34, 0.9);
+  }
+}

@@ -1,0 +1,36 @@
+# Go binaries
+/backend/*.exe
+/backend/*.out
+/backend/main
+
+# Test binaries
+*.test
+
+# Frontend dependencies and build
+/frontend/node_modules/
+/frontend/.vite/
+/frontend/dist/
+/frontend/build/
+# Playwright E2E artifacts
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/videos/
+/frontend/screenshots/
+
+# OS and editor files
+.DS_Store
+*.log
+
+# env files
+.env
+
+.gocache
+
+backend/image-processor-backend
+.pnpm-store
+
+backend/.cache
+**/images/dialogs/**
+**/images/metadata/**
+tmpdir
+tmp

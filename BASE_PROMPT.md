@@ -1,0 +1,2 @@
+You're an an AI prompt engineer, and your goal is to write the single best `AI_README.md` file possible. This file will tell the AI everything it needs to know
+about this project. If some of the backend or frontend code is organized in a way that's too difficult to consume, you are free to extract things into files, and move files around to your liking.

@@ -1,0 +1,65 @@
+services:
+  # Backend service using Go
+  backend:
+    image: golang:1.24
+    container_name: backend
+    user: "1000:1000"
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      # Host port 5700 mapped to container port 5700 (backend listens on 5700), bound to localhost only
+      - "127.0.0.1:5700:5700"
+    environment:
+      # Set IMAGE_DIR to the project root to allow navigating all image subfolders
+      - IMAGE_DIR=/app/images
+      - GOCACHE=/app/.cache/go-build
+    command:
+      - sh
+      - -c
+      - |
+        # Prepare Go build cache, install reflex, then watch and run
+        mkdir -p /app/.cache/go-build && \
+        go install github.com/cespare/reflex@latest && \
+        reflex -r '\.go$' -s -- sh -c 'GOCACHE=/app/.cache/go-build go run main.go'
+
+  # Frontend development server using Vite
+  frontend:
+    image: node:18
+    container_name: frontend
+    # Note: frontend runs as root in container to allow npm installs
+    # user: "1000:1000"
+    working_dir: /app
+    # Bind-mount local frontend source; mount node_modules on host to preserve permissions
+    volumes:
+      - ./frontend:/app:delegated
+      - frontend_node_modules:/app/node_modules
+    ports:
+      # Host port 5800 mapped to container port 5800 (frontend dev server listens on 5800), bound to localhost only
+      - "127.0.0.1:5800:5800"
+    environment:
+      # Point frontend to backend container on port 5700
+      - BACKEND_URL=http://backend:5700
+    depends_on:
+      - backend
+    # Install dependencies and start development server via npm
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  # End-to-end test runner using Playwright
+  # e2e:
+  #   # Build from frontend context using the Dockerfile.e2e
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.e2e
+  #   container_name: e2e
+  #   depends_on:
+  #     - frontend
+  #   # Override base URL inside tests to use the frontend service
+  #   environment:
+  #     # Use frontend service host inside Docker
+  #     - BASE_URL=http://frontend:5800
+  #   # Use the default CMD to run tests (pnpm run test:e2e)
+  #   # Exit after tests complete
+
+volumes:
+  frontend_node_modules:
