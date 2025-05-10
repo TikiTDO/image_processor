@@ -45,8 +45,18 @@ Filenames on disk continue to include timestamp prefixes (and may change on reor
     ```
 - `GET /api/images/:id` (optional query `?path=<subdir>`)
   • Serves the raw image bytes for the given `id` (hash).
-- `POST /api/images/:id/reorder` (optional query `?path=<subdir>`)
+ - `POST /api/images/:id/reorder` (optional query `?path=<subdir>`)
   • Reorders the image (the underlying filename/timestamp prefix may change).
+
+Note: All endpoints (API, static images, SSE) now run over HTTPS (TLS) by default.
+
+## 3.2. HTTPS & HTTP/3 (QUIC)
+- The backend auto-generates a self-signed certificate into `backend/certs/` on startup.
+- Docker Compose exposes both TCP and UDP on port 5700:
+  • TCP 5700: HTTP/1.1 and HTTP/2 over TLS
+  • UDP 5700: HTTP/3 (QUIC) support
+- The development frontend mounts the same certs and serves over HTTPS (https://localhost:5800).
+- Frontend proxies `/api` and `/images` to the backend’s HTTPS endpoint; the Vite config is set with `secure: false` to accept the self-signed cert.
 
 ## 4. Environment & Configuration
 Create a `.env` file at the root or set environment variables directly:
@@ -58,8 +68,12 @@ SERVER_HOST=0.0.0.0       # Address for server to listen on (default)
 SERVER_PORT=5700          # Port for server to listen on (default)
 
 # Frontend (Vite)
-VITE_API_BASE_URL=http://localhost:5700/api
-VITE_WS_URL=http://localhost:5700/api/updates
+VITE_API_BASE_URL=https://localhost:5700/api  # use HTTPS for all API calls
+VITE_WS_URL=https://localhost:5700/api/updates  # SSE over HTTPS
+
+// Ensure local Node/NPM match project engines:
+NODE_VERSION=22.x       # Frontend requires Node 22.x
+NPM_VERSION=11.3.x      # npm enforced via .npmrc (engine-strict)
 ```
 
 ## 5. Running & Testing
@@ -77,16 +91,18 @@ go test ./...             # run unit tests
 **Frontend**
 ```bash
 cd frontend
-npm install
-npm run dev               # http://localhost:5800
+npm install               # requires Node 22.x and npm 11.3.x
+npm run dev               # https://localhost:5800 (accept untrusted self-signed cert)
 npm test                  # Vitest
 ```
 
 **End-to-End (E2E)**
 ```bash
-npx playwright test
-# or via Docker Compose
-docker-compose up --exit-code-from e2e frontend e2e
+npx playwright test --ignore-certificate-errors   # tests against HTTPS dev server
+```
+or via Docker Compose:
+```bash
+docker-compose up --exit-code-from frontend frontend
 ```
 
 ## 6. AI Constraints & Best Practices
