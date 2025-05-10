@@ -39,17 +39,17 @@ func main() {
 		log.Println("Warning: file watcher not started:", err)
 	}
 	r := api.SetupRouter()
-		// Determine host and port for the HTTP server
-		host := os.Getenv("SERVER_HOST")
-		if host == "" {
-			host = "0.0.0.0"
-		}
-		port := os.Getenv("SERVER_PORT")
-		if port == "" {
-			port = "5700"
-		}
-		addr := host + ":" + port
-		log.Printf("Server running on %s", addr)
-		// Start the server on the configured address
-		r.Run(addr)
+	// Determine host and port for the HTTP server
+	host := os.Getenv("SERVER_HOST")
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "5700"
+	}
+	addr := host + ":" + port
+	log.Printf("Server running on %s", addr)
+	// Start the server on the configured address
+	r.Run(addr)
 }
