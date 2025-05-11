@@ -43,7 +43,7 @@ services:
       - "127.0.0.1:5800:5800"
     environment:
       # Point frontend to backend container on port 5700
-      - BACKEND_URL=http://backend:5700
+      - BACKEND_URL=https://backend:5700
     depends_on:
       - backend
     # Install dependencies and start development server via npm

@@ -10,9 +10,9 @@ import ErrorOverlay from './components/ErrorOverlay';
 import {
   getImages,
   uploadImages,
-  getImageDialog,
   setImageDialog,
   getImageDescription,
+  getImageDialogs,
   ImageMeta,
   getDefaultPath,
 } from './services/api';
@@ -60,6 +60,8 @@ const AppContent: React.FC = () => {
   const [showSpeakerConfig, setShowSpeakerConfig] = useState(false);
   // Global edit mode: when true, all dialog panels are editable
   const [editMode, setEditMode] = useState<boolean>(false);
+  // Cache of dialogs for all images: id -> dialog lines
+  const [dialogMap, setDialogMap] = useState<Record<string, string[]>>({});
   const { colors: speakerColors, names: speakerNames } = useSpeakerContext();
   const suppressClicks = useRef(false);
   // Handlers to navigate lightbox images
@@ -123,6 +125,12 @@ const AppContent: React.FC = () => {
   useSSE('/api/updates', () => {
     fetchImages();
   });
+  // Load all dialogs in one request when path changes
+  useEffect(() => {
+    getImageDialogs(path)
+      .then((map) => setDialogMap(map))
+      .catch((err) => console.error('Error fetching dialogs:', err));
+  }, [path]);
   // Persist path to sessionStorage and localStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem(STORAGE_PATH_KEY, path);
@@ -150,30 +158,25 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (selectedId) {
-      getImageDialog(selectedId, path)
-        .then((dlg) => {
-          if (dlg && dlg.length > 0) {
-            // Existing dialog: switch to dialog view
-            setSelectedDialog(dlg);
-            setDescMode('dialog');
-          } else {
-            // No dialog: initialize with one narrator line
-            const initDialog = ['0:'];
-            setSelectedDialog(initDialog);
-            setDescMode('dialog');
-            // Persist initial dialog entry
-            setImageDialog(selectedId, initDialog, path)
-              .catch((e) => console.error('Error initializing dialog:', e));
-          }
-        })
-        .catch((err) => console.error('Error loading dialog:', err));
+      const dlg = dialogMap[selectedId];
+      if (dlg && dlg.length > 0) {
+        setSelectedDialog(dlg);
+        setDescMode('dialog');
+      } else {
+        const initDialog = ['0:'];
+        setSelectedDialog(initDialog);
+        setDescMode('dialog');
+        // Persist initial dialog entry and update cache
+        setImageDialog(selectedId, initDialog, path)
+          .catch((e) => console.error('Error initializing dialog:', e));
+        setDialogMap((m) => ({ ...m, [selectedId]: initDialog }));
+      }
     } else {
-      // No image selected: return to description view
       setSelectedDialog([]);
       setRawDescription('');
       setDescMode('text');
     }
-  }, [selectedId, path]);
+  }, [selectedId, dialogMap, path]);
 
   const handleFileDrop = async (files: FileList) => {
     const imageFiles = Array.from(files).filter((f) =>

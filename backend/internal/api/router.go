@@ -69,5 +69,8 @@ func SetupRouter() *gin.Engine {
    // Dialog endpoints
    r.GET("/api/images/:id/dialog", handleGetDialog)
    r.POST("/api/images/:id/dialog", handleSetDialog)
+  
+   // Bulk dialog retrieval
+   r.GET("/api/dialogs", handleGetAllDialogs)
    return r
 }

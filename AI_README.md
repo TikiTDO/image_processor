@@ -66,12 +66,18 @@ This document equips the AI assistant with everything needed to understand, expl
 ### Backend
 ```bash
 cd backend
+# Fetch dependencies
 go mod tidy
-# For tests in restricted envs:
+
+# Run the server (HTTPS on default 127.0.0.1:5700)
+go run main.go
+
+# Run unit tests; if temp dirs are not writable, override them:
 mkdir -p .cache/go-build tmpdir
-export GOCACHE=$(pwd)/.cache/go-build TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir
-go run main.go         # https://127.0.0.1:5700
-go test ./...          # unit tests
+export GOCACHE=$(pwd)/.cache/go-build
+export TMPDIR=$(pwd)/tmpdir
+export GOTMPDIR=$(pwd)/tmpdir
+go test ./...
 ```
 
 ### Frontend

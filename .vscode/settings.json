@@ -1,0 +1,10 @@
+{
+  "files.exclude": {
+    "**/.cache": true,
+    "**/playwright-report": true
+  },
+  "workbench.editor.limit.excludeDirty": false,
+  "search.exclude": {
+    "**/.cache": true
+  }
+}

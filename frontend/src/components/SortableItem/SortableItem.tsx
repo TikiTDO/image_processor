@@ -13,7 +13,7 @@ export interface SortableItemProps {
 }
 
 const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, onClick }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   // Parse dialogLine into speakerId and text for preview
   const { colors } = useSpeakerContext();
   let previewText = '';
@@ -30,24 +30,16 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     transition,
   };
   return (
-    <div ref={setNodeRef} style={style} className="item" {...attributes} {...listeners}>
-      {onClick && (
-        <div
-          className="zoom-icon"
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-        >
-          🔍
-        </div>
-      )}
+    <div ref={setNodeRef} style={style} className="item">
+      {/* Drag handle: click or press to reorder */}
+      <div
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+      >
+        {isDragging ? '✋' : '☰'}
+      </div>
+      {/* Image click opens lightbox */}
       <img
         src={url}
         alt={id}

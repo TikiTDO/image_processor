@@ -137,7 +137,7 @@
   margin: 5px;
   padding: 5px;
   border: 1px solid #ccc;
-  cursor: grab;
+  cursor: default;
   /* Prevent default touch scrolling during drag */
   touch-action: none;
   background: #fff;
@@ -148,6 +148,28 @@
   max-width: 100%;
   height: auto;
   display: block;
+  cursor: pointer;
+}
+/* Drag handle for reordering */
+.drag-handle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0.8;
+  z-index: 10;
+  transition: opacity 0.2s;
+  font-size: 1.2em;
+}
+.item:hover .drag-handle {
+  opacity: 1;
 }
 
 .filename {
@@ -195,6 +217,10 @@ body {
     background: #222;
   }
   .zoom-icon {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+  }
+  .drag-handle {
     background: rgba(0, 0, 0, 0.6);
     color: #fff;
   }

@@ -24,6 +24,34 @@ type SpeakerMeta struct {
    SpeakerNames  map[string]string `json:"speaker_names"`
 }
 
+// handleGetAllDialogs retrieves dialogs for all images in the given path.
+func handleGetAllDialogs(c *gin.Context) {
+   sub := c.Query("path")
+   baseDir := ImageDir
+   if sub != "" {
+       baseDir = filepath.Join(ImageDir, sub)
+   }
+   // get list of images
+   imgs := getImages(sub)
+   // assemble dialogs map
+   dialogs := make(map[string][]string, len(imgs))
+   for _, im := range imgs {
+       // resolve filename by hash
+       filename, err := findFilenameByHash(baseDir, im.ID)
+       if err != nil || filename == "" {
+           dialogs[im.ID] = []string{}
+           continue
+       }
+       entries, err := storage.LoadDialogFile(baseDir, filename)
+       if err != nil {
+           dialogs[im.ID] = []string{}
+           continue
+       }
+       dialogs[im.ID] = entries
+   }
+   c.JSON(http.StatusOK, gin.H{"dialogs": dialogs})
+}
+
 // findFilenameByHash searches for a file in baseDir whose SHA-256 hex digest of its filename matches the given hash.
 // Returns the original filename if found, or empty string if not.
 func findFilenameByHash(baseDir, hash string) (string, error) {

@@ -13,8 +13,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableItem from '../SortableItem';
-import { ImageMeta, reorderImage } from '../../services/api';
-import { getImageDialog } from '../../services/api';
+import { ImageMeta, reorderImage, getImageDialogs } from '../../services/api';
 
 interface ImageGridProps {
   images: ImageMeta[];
@@ -36,7 +35,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onItemClick,
 }) => {
   const isDragging = useRef(false);
-  // Map from image ID to its first dialog line (e.g. "0:Hello")
+  // Map from image ID to its first dialog line (e.g. "0:Hello"), loaded via bulk API
   const [dialogMap, setDialogMap] = useState<Record<string, string>>({});
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -60,20 +59,18 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }
   };
 
-  // Fetch the first dialog line for each image to display in the grid
+  // Fetch dialog previews for all images in one request
   useEffect(() => {
-    // Reset map when images or path change
-    setDialogMap({});
-    images.forEach((img) => {
-      getImageDialog(img.id, path)
-        .then((dlg) => {
-          const line = dlg && dlg.length > 0 ? dlg[0] : '';
-          setDialogMap((prev) => ({ ...prev, [img.id]: line }));
-        })
-        .catch((err) => {
-          console.error('Error fetching dialog preview:', err);
+    getImageDialogs(path)
+      .then((map) => {
+        const preview: Record<string, string> = {};
+        images.forEach((img) => {
+          const lines = map[img.id] || [];
+          preview[img.id] = lines.length > 0 ? lines[0] : '';
         });
-    });
+        setDialogMap(preview);
+      })
+      .catch((err) => console.error('Error fetching dialog previews:', err));
   }, [images, path]);
 
   return (

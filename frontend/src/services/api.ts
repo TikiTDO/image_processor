@@ -141,3 +141,12 @@ export async function getDefaultPath(): Promise<string> {
   const res = await fetchJson<{ path: string }>('/api/path', { path: '' });
   return res.path;
 }
+// Fetch dialog entries for all images in the given path (bulk).
+export async function getImageDialogs(path?: string): Promise<Record<string, string[]>> {
+  const query = path ? `?path=${encodeURIComponent(path)}` : '';
+  const res = await fetchJson<{ dialogs: Record<string, string[]> }>(
+    `/api/dialogs${query}`,
+    { dialogs: {} }
+  );
+  return res.dialogs;
+}
