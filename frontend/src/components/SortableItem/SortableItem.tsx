@@ -33,40 +33,29 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     transform: CSS.Transform.toString(transform),
     transition,
   };
-  // Context menu visibility and position
+  // Press interactions: click, long-press, context menu
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const menuRef = useRef<HTMLDivElement | null>(null);
-  // Long press detection
-  const longPressTimer = useRef<number>();
-  const longPressTriggered = useRef(false);
   const [modalVisible, setModalVisible] = useState(false);
-  // Handle right-click (context menu)
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setMenuVisible(true);
-  };
-  // Handle touch for long press
-  const handleTouchStart = () => {
-    longPressTriggered.current = false;
-    longPressTimer.current = window.setTimeout(() => {
-      longPressTriggered.current = true;
-      setModalVisible(true);
-    }, 600);
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (!longPressTriggered.current) {
-      e.stopPropagation();
+  const closeMenus = () => { setMenuVisible(false); setModalVisible(false); };
+  const pressHandlers = usePress({
+    onClick: (e) => {
+      e.preventDefault();
+      closeMenus();
       onClick && onClick();
-    }
-  };
-  // Close any open menus or modal
-  const closeMenus = () => {
-    setMenuVisible(false);
-    setModalVisible(false);
-  };
+    },
+    onLongPress: (e) => {
+      e.preventDefault();
+      setMenuPos({ x: e.clientX, y: e.clientY });
+      setMenuVisible(true);
+    },
+    onContextMenu: (e) => {
+      e.preventDefault();
+      setMenuPos({ x: e.clientX, y: e.clientY });
+      setMenuVisible(true);
+    },
+  });
   // Close context menu when clicking outside
   useEffect(() => {
     if (!menuVisible) return;
@@ -85,8 +74,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       className="item"
       {...attributes}
       {...listeners}
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
+      {...pressHandlers}
     >
       {/* Edit icon for accessibility */}
       <button
@@ -101,21 +89,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       <img
         src={url}
         alt={id}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!isDragging && !longPressTriggered.current && !menuVisible) {
-            onClick && onClick();
-          }
-          closeMenus();
-        }}
-        onTouchEnd={(e) => {
-          if (longPressTimer.current) clearTimeout(longPressTimer.current);
-          e.stopPropagation();
-          if (!longPressTriggered.current && !menuVisible) {
-            onClick && onClick();
-          }
-          closeMenus();
-        }}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
