@@ -40,8 +40,9 @@
 .grid {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-evenly;
   padding: 0;
-  margin: 0;
+  margin: 0 auto;
 }
 /* Controls bar at top for zoom and path selection */
 .controls {

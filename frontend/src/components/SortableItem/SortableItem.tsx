@@ -83,6 +83,8 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       ref={setNodeRef}
       style={style}
       className="item"
+      {...attributes}
+      {...listeners}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
     >
@@ -99,8 +101,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       <img
         src={url}
         alt={id}
-        {...attributes}
-        {...listeners}
         onClick={(e) => {
           e.stopPropagation();
           if (!isDragging && !longPressTriggered.current && !menuVisible) {
