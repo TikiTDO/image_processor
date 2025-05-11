@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { usePress } from '../../hooks/usePress';
+// import press hook (replaced by custom pointer handlers) removed
 
 export interface SortableItemProps {
   id: string;
@@ -34,32 +34,49 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     transform: CSS.Transform.toString(transform),
     transition,
   };
-  // Context menu and long press modal visibility
+  // Context menu and long-press state
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const closeMenus = () => { setMenuVisible(false); setModalVisible(false); };
-  // Press handler for click, long press (modal), and context menu (dropdown)
-  const pressHandlers = usePress({
-    onClick: (e) => {
-      e.preventDefault();
-      closeMenus();
-      onClick && onClick();
-    },
-    onLongPress: (e) => {
-      e.preventDefault();
-      const evt = e as React.PointerEvent;
-      setMenuPos({ x: evt.clientX, y: evt.clientY });
+  // Pointer tracking for long-press vs drag vs click
+  const pointerStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const longPressTimer = useRef<number>();
+  const longPressTriggered = useRef(false);
+  const draggingRef = useRef(false);
+  const LONG_DELAY = 600;
+  const MOVE_THRESHOLD = 5;
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    longPressTriggered.current = false;
+    draggingRef.current = false;
+    longPressTimer.current = window.setTimeout(() => {
+      longPressTriggered.current = true;
       setModalVisible(true);
-    },
-    onContextMenu: (e) => {
-      e.preventDefault();
-      const evt = e as React.MouseEvent;
-      setMenuPos({ x: evt.clientX, y: evt.clientY });
-      setMenuVisible(true);
-    },
-  });
+    }, LONG_DELAY);
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    if (!draggingRef.current && Math.hypot(dx, dy) > MOVE_THRESHOLD) {
+      draggingRef.current = true;
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    }
+  };
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (!longPressTriggered.current && !draggingRef.current && !menuVisible && !modalVisible) {
+      onClick && onClick();
+    }
+    longPressTriggered.current = false;
+    draggingRef.current = false;
+  };
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuPos({ x: e.clientX, y: e.clientY });
+    setMenuVisible(true);
+  };
   // Close context menu when clicking outside
   useEffect(() => {
     if (!menuVisible) return;
@@ -78,6 +95,10 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       className="item"
       {...attributes}
       {...listeners}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onContextMenu={handleContextMenu}
     >
       {/* Edit icon for accessibility */}
       <button
@@ -92,7 +113,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       <img
         src={url}
         alt={id}
-        {...pressHandlers}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
