@@ -157,6 +157,8 @@
   padding: 5px;
   border: 1px solid #ccc;
   cursor: default;
+  /* Make entire item draggable */
+  cursor: grab;
   /* Prevent default touch scrolling during drag */
   touch-action: none;
   background: #fff;
@@ -170,26 +172,6 @@
   cursor: pointer;
 }
 /* Drag handle for reordering */
-.drag-handle {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  opacity: 0.8;
-  z-index: 10;
-  transition: opacity 0.2s;
-  font-size: 1.2em;
-}
-.item:hover .drag-handle {
-  opacity: 1;
-}
 
 .filename {
   /* Filename label below image */
