@@ -67,13 +67,13 @@ func main() {
        Handler:   r,
        TLSConfig: tlsConfig,
    }
-   // Start HTTP/3 (QUIC) server
-   go func() {
-       log.Printf("Starting HTTP/3 server on %s", addr)
-       if err := http3.ListenAndServe(addr, certFile, keyFile, r); err != nil {
-           log.Fatalf("HTTP/3 server error: %v", err)
-       }
-   }()
+	// Start HTTP/3 (QUIC) server
+	go func() {
+		log.Printf("Starting HTTP/3 server on %s", addr)
+		if err := http3.ListenAndServeQUIC(addr, certFile, keyFile, r); err != nil {
+			log.Fatalf("HTTP/3 server error: %v", err)
+		}
+	}()
    // Start HTTPS server (HTTP/1.1 & HTTP/2)
    log.Printf("Starting HTTPS server on %s", addr)
    if err := server.ListenAndServeTLS(certFile, keyFile); err != nil {
