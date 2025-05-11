@@ -10,6 +10,12 @@ This document equips the AI assistant with everything needed to understand, expl
 ## 2. High-Level Overview
 - **Backend**: Go HTTP server (Gin) exposing REST and SSE endpoints, serving images and metadata.
 - **Frontend**: React + TypeScript (Vite) UI with drag-and-drop reordering, zoom, image dialogs, and speaker configuration.
+- **Frontend**: React + TypeScript (Vite) UI with:
+  - Drag-and-drop reordering via dnd-kit with activation constraints on both pointer and touch sensors
+  - Reliable click vs drag behavior using pointer events in `SortableItem`
+  - Short click/tap to open image editor (lightbox), right-click for context menu (remove/hide), long-press for modal actions
+  - Zoom controls, path picker, speaker dialog editing, and hidden-image management
+  - CSS flex grid with centered rows and consistent gaps
 - **End-to-End Tests**: Playwright tests validating user interactions.
 - **Orchestration**: `docker-compose.yml` for cohesive local environment.
 
@@ -84,8 +90,12 @@ go test ./...
 ```bash
 cd frontend
 npm install            # or yarn/pnpm
-npm run dev            # https://localhost:5800
+npm run dev            # https://localhost:5800 (HTTPS with backend certs)
 npm test               # Vitest
+```
+You can also bootstrap all local tooling (pre-commit hooks, linters, frontend deps) with:
+```bash
+bash scripts/setup-dev.sh
 ```
 
 ### End-to-End
@@ -121,6 +131,9 @@ Services:
    EOF
    ```
 2. Run all tests: `go test`, `npm test`, `npx playwright test`.
+3. For UI/interaction updates, consider:
+   - dnd-kit activation constraints (`activationConstraint` on `PointerSensor`/`TouchSensor`)
+   - custom pointer-event handlers (`onPointerDown/Move/Up`) in `SortableItem` to reconcile click, drag, long-press, and context-menu actions.
 
 ### Best Practices
 - Fix root causes; avoid broad refactors.
