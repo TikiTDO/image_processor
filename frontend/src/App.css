@@ -1,3 +1,22 @@
+.edit-icon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 1em;
+  border: none;
+}
+.edit-icon:hover {
+  background: #e0e0e0;
+}
 .zoom-icon {
   position: absolute;
   top: 4px;

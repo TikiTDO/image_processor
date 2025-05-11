@@ -86,7 +86,24 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onClick={(e) => {
+        e.stopPropagation();
+        // short click: open editor if not dragging/long-press/menu
+        if (!isDragging && !longPressTriggered.current && !menuVisible) {
+          onClick && onClick();
+        }
+        closeMenus();
+      }}
     >
+      {/* Edit icon for accessibility */}
+      <button
+        className="edit-icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick && onClick();
+        }}
+        aria-label="Edit image"
+      >✎</button>
       {/* Drag handle: click or press to reorder */}
       <div
         className="drag-handle"
@@ -95,14 +112,10 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       >
         {isDragging ? '✋' : '☰'}
       </div>
-      {/* Image click opens lightbox */}
+      {/* Image */}
       <img
         src={url}
         alt={id}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick && onClick();
-        }}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
