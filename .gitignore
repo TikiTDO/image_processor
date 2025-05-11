@@ -35,3 +35,6 @@ tmpdir
 tmp
 # Local HTTPS certificates
 backend/certs/
+ 
+# Python virtual environment
+.venv/

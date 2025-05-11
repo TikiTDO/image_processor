@@ -27,7 +27,7 @@ services:
 
   # Frontend development server using Vite
   frontend:
-    image: node:18
+    image: node:22
     container_name: frontend
     # Note: frontend runs as root in container to allow npm installs
     # user: "1000:1000"
@@ -37,7 +37,7 @@ services:
       - ./frontend:/app:delegated
       - frontend_node_modules:/app/node_modules
       # Mount backend certificates for HTTPS
-      - ./backend/certs:/app/certs:ro
+      - ./backend/certs:/backend/certs:ro
     ports:
       # Host port 5800 mapped to container port 5800 (frontend dev server listens on 5800), bound to localhost only
       - "127.0.0.1:5800:5800"

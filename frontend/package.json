@@ -1,9 +1,10 @@
+    "npm": "11.3.x",
+    "node": "22.x"
 {
   "name": "image-processor-frontend",
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "npm": "11.3.x",
     "node": "22.x"
   },
   "scripts": {

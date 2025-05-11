@@ -43,6 +43,13 @@ This repository contains a Go-based backend and a React + TypeScript frontend fo
    npm run test:watch
    ```
 
+### Local Development Bootstrap
+
+If you’d like to bootstrap all local development tooling—Git pre-commit hooks (with Python venv and yamllint) and frontend dependencies—run:
+```sh
+bash scripts/setup-dev.sh
+```
+
 Open http://localhost:5800 in your browser to start dragging and reordering images.
 
 ## Docker Compose Setup
