@@ -40,7 +40,9 @@
 .grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: center;
+  /* Uniform spacing between items */
+  gap: 10px;
   padding: 0;
   margin: 0 auto;
 }
