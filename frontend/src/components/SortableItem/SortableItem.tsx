@@ -115,7 +115,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
         onTouchMove={handleImgTouchMove}
         onTouchEnd={handleImgTouchEnd}
       />
-      <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
       {dialogLine && (
         <div

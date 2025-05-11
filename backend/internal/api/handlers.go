@@ -63,7 +63,12 @@ func findFilenameByHash(baseDir, hash string) (string, error) {
        if fi.IsDir() {
            continue
        }
-       if storage.HashString(fi.Name()) == hash {
+       full := filepath.Join(baseDir, fi.Name())
+       h, err := storage.HashFile(full)
+       if err != nil {
+           continue
+       }
+       if h == hash {
            return fi.Name(), nil
        }
    }
@@ -313,9 +318,9 @@ func handleDeleteImage(c *gin.Context) {
        c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete image file"})
        return
    }
-   // Delete metadata and dialog entries (ignore errors)
-   _ = storage.DeleteMetaEntry(baseDir, filename)
-   _ = storage.DeleteDialogEntry(baseDir, filename)
+   // Delete metadata and dialog entries (ignore errors), using content hash
+   _ = storage.DeleteMetaEntry(baseDir, idHash)
+   _ = storage.DeleteDialogEntry(baseDir, idHash)
    c.Status(http.StatusNoContent)
 }
 
@@ -553,8 +558,13 @@ func handleReorder(c *gin.Context) {
            }
        }
    }
-   // Return the new hash ID for the moved file
-   newID := storage.HashString(movedNewName)
+   // Return the new hash ID for the moved file (content hash unchanged)
+   fullNewPath := filepath.Join(baseDir, movedNewName)
+   newID, err := storage.HashFile(fullNewPath)
+   if err != nil {
+       // Fallback to original ID if unable to hash
+       newID = idHash
+   }
    c.JSON(http.StatusOK, ReorderResponse{ID: newID, Timestamp: movedTSStr})
 }
 
@@ -601,8 +611,12 @@ func getImages(sub string) []ImageResponse {
        } else {
            t = storage.GetFileTimestamp(full)
        }
-       // compute hash ID for this filename
-       hash := storage.HashString(fi.Name())
+       // compute hash ID based on image content
+       fullPath := filepath.Join(dir, fi.Name())
+       hash, err := storage.HashFile(fullPath)
+       if err != nil {
+           continue
+       }
        // construct URL endpoint for this image
        var imgURL string
        if sub != "" {

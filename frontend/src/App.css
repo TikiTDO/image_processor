@@ -1,3 +1,18 @@
+.zoom-number-btn:hover {
+  background: #e0e0e0;
+}
+/* Dark mode adjustments for zoom number */
+@media (prefers-color-scheme: dark) {
+  .zoom-number-btn {
+    background: #444;
+    color: #ccc;
+    border: none;
+  }
+  .zoom-number-btn:hover {
+    background: #555;
+    color: #ddd;
+  }
+}
 .edit-icon {
   position: absolute;
   top: 4px;
@@ -52,6 +67,7 @@
   align-items: center;
   gap: 8px;
   margin: 10px 0;
+  flex-wrap: wrap;
 }
 /* Path picker styling */
 .path-picker {
@@ -97,18 +113,35 @@
 .path-dropdown li:hover {
   background: #f5f5f5;
 }
+/* Speaker config button: show speaker names in colors */
+.speaker-config-btn {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 1em;
+}
+.speaker-config-btn:hover {
+  background: #e0e0e0;
+}
 .controls input {
   width: 200px;
   padding: 4px 8px;
   font-size: 1em;
 }
 /* Zoom buttons styling */
+/* Zoom control buttons: circular */
 .zoom-btn {
   width: 44px;
   height: 44px;
   background: #f0f0f0;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   font-size: 1.5em;
   line-height: 1;
   display: flex;
@@ -116,6 +149,25 @@
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
+  color: #333;
+}
+.zoom-btn:hover {
+  background: #e0e0e0;
+}
+.zoom-btn:active {
+  background: #d0d0d0;
+}
+@media (prefers-color-scheme: dark) {
+  .zoom-btn {
+    background: #333;
+    color: #eee;
+  }
+  .zoom-btn:hover {
+    background: #444;
+  }
+  .zoom-btn:active {
+    background: #555;
+  }
 }
 /* Zoom level dropdown styling */
 .zoom-select {
@@ -142,6 +194,12 @@
 }
 .zoom-select:active {
   background-color: #c8c8c8;
+}
+/* Zoom slider styling */
+.zoom-range {
+  width: 100px;
+  margin: 0 8px;
+  cursor: pointer;
 }
 .zoom-btn:hover {
   background: #e0e0e0;
@@ -201,7 +259,123 @@ body {
   background: #fafafa;
   color: #111;
 }
+/* Zoom controls container */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  position: relative; /* for absolute menu positioning */
+}
+/* Central zoom number button */
+.zoom-number-btn {
+  background: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 25px;
+  padding: 8px 16px;
+  min-width: 60px;
+  height: 44px;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 8px;
+  transition: background 0.2s;
+}
+.zoom-number-btn:hover {
+  background: #e0e0e0;
+}
+/* Slider menu backdrop covers entire screen to capture clicks */
+/* Slider menu panel */
+.zoom-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  background: #fff;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 1000;
+  color: #333;
+}
 @media (prefers-color-scheme: dark) {
+  .zoom-menu {
+    background: #222;
+    border-color: #444;
+    color: #eee;
+  }
+  .zoom-menu input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background: #555;
+  }
+  .zoom-menu input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #bbb;
+    margin-top: -5px;
+    cursor: pointer;
+  }
+}
+/* Range slider inside zoom menu */
+.zoom-menu input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #ccc;
+}
+.zoom-menu input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #888;
+  margin-top: -5px;
+  cursor: pointer;
+}
+.zoom-menu input[type="range"] {
+  width: 200px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  background: transparent;
+}
+/* Hide filename labels and banners */
+.filename,
+.filename-banner {
+  display: none;
+}
+/* Hide empty dialog sidebars */
+.dialog-sidebar:empty {
+  display: none;
+}
+/* Edit mode toggle: pill-shaped button */
+.edit-mode-btn {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+.edit-mode-btn:hover {
+  background: #e0e0e0;
+}
+@media (prefers-color-scheme: dark) {
+  /* Dark mode: strong dark background with light text/border */
+  .dialog-toggle {
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    /* subtle dark stroke for contrast */
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.8);
+    text-stroke: 0.5px rgba(0,0,0,0.8);
+  }
   body {
     background: #111;
     color: #eee;
@@ -436,12 +610,19 @@ body {
   position: sticky;
   top: 0;
   align-self: flex-end;
-  background: transparent;
+  /* Light mode: clear white background with border for strong contrast */
+  background: #f0f0f0;
+  color: #333;
   border: none;
   cursor: pointer;
   font-size: 1.2em;
-  padding: 0.25rem;
+  padding: 6px 12px;
   margin-bottom: 0.5rem;
+  border-radius: 6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  /* subtle stroke for legibility */
+  -webkit-text-stroke: 0.5px rgba(0,0,0,0.6);
+  text-stroke: 0.5px rgba(0,0,0,0.6);
   z-index: 1;
 }
 

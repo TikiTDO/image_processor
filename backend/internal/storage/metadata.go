@@ -29,8 +29,14 @@ func SaveMetadataFile(path string, m map[string]string) error {
 }
 
 // SaveMetaEntry writes the timestamp for a single image ID to hashed file storage.
+// The hash is computed over the image content, not the filename.
 func SaveMetaEntry(baseDir, id, ts string) error {
-   h := hashString(id)
+   // Compute content-based hash
+   fullpath := filepath.Join(baseDir, id)
+   h, err := HashFile(fullpath)
+   if err != nil {
+       return err
+   }
    dir := filepath.Join(baseDir, "metadata", h[:2])
    if err := os.MkdirAll(dir, 0755); err != nil {
        return err
@@ -44,9 +50,23 @@ func SaveMetaEntry(baseDir, id, ts string) error {
 }
 
 // LoadMetaEntry reads the timestamp for a single image ID from hashed file storage.
-// Returns empty string if not found.
+// Returns empty string if not found. The ID may be either a filename or a full 64-char hex hash.
 func LoadMetaEntry(baseDir, id string) (string, error) {
-   h := hashString(id)
+   var h string
+   // Determine if id is already a hash or a filename
+   if len(id) == 64 && isHex(id) {
+       h = id
+   } else {
+       fullpath := filepath.Join(baseDir, id)
+       var err error
+       h, err = HashFile(fullpath)
+       if err != nil {
+           if os.IsNotExist(err) {
+               return "", nil
+           }
+           return "", err
+       }
+   }
    file := filepath.Join(baseDir, "metadata", h[:2], h+".json")
    data, err := ioutil.ReadFile(file)
    if err != nil {
@@ -62,9 +82,24 @@ func LoadMetaEntry(baseDir, id string) (string, error) {
    return ts, nil
 }
 
-// DeleteMetaEntry removes the metadata file for a given image ID.
+// DeleteMetaEntry removes the metadata file for a given image ID or hash.
 func DeleteMetaEntry(baseDir, id string) error {
-   h := hashString(id)
+   var h string
+   // If id looks like a full hash, use it directly; otherwise compute content hash
+   if len(id) == 64 && isHex(id) {
+       h = id
+   } else {
+       fullpath := filepath.Join(baseDir, id)
+       var err error
+       h, err = HashFile(fullpath)
+       if err != nil {
+           // Nothing to delete if file absent
+           if os.IsNotExist(err) {
+               return nil
+           }
+           return err
+       }
+   }
    file := filepath.Join(baseDir, "metadata", h[:2], h+".json")
    if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
        return err

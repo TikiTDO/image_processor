@@ -182,13 +182,9 @@ const AppContent: React.FC = () => {
         setSelectedDialog(dlg);
         setDescMode('dialog');
       } else {
-        const initDialog = ['0:'];
-        setSelectedDialog(initDialog);
+        // No existing dialog: clear any previous dialog display
+        setSelectedDialog([]);
         setDescMode('dialog');
-        // Persist initial dialog entry and update cache
-        setImageDialog(selectedId, initDialog, path)
-          .catch((e) => console.error('Error initializing dialog:', e));
-        setDialogMap((m) => ({ ...m, [selectedId]: initDialog }));
       }
     } else {
       setSelectedDialog([]);
@@ -229,21 +225,31 @@ const AppContent: React.FC = () => {
           onZoomChange={setZoomLevel}
         />
         <PathPicker path={path} onChange={setPath} />
-        {Object.entries(speakerNames).map(([key, name]) => (
-          <span
-            key={key}
-            style={{ color: speakerColors[Number(key)] || '#000', margin: '0 0.5rem' }}
-          >
-            {name}
-          </span>
-        ))}
-        <button onClick={() => setShowSpeakerConfig(true)}>
-          Speakers...
+        {/* Speaker configuration button: shows speaker names in their colors */}
+        <button
+          className="speaker-config-btn"
+          onClick={() => setShowSpeakerConfig(true)}
+        >
+          {Object.entries(speakerNames).map(([key, name]) => (
+            <span
+              key={key}
+              style={{ color: speakerColors[Number(key)] || '#000', margin: '0 0.5rem' }}
+            >
+              {name}
+            </span>
+          ))}
         </button>
-        <button onClick={() => setEditMode((v) => !v)}>
+        {/* Toggle global edit mode */}
+        <button
+          className="edit-mode-btn"
+          onClick={() => setEditMode((v) => !v)}
+        >
           {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
         </button>
-        <button onClick={() => setShowHiddenModal(true)}>
+        <button
+          className="edit-mode-btn"
+          onClick={() => setShowHiddenModal(true)}
+        >
           Hidden Images ({hiddenIDs.length})
         </button>
       </div>
@@ -276,14 +282,6 @@ const AppContent: React.FC = () => {
           onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
           onTouchEnd={(e) => { e.stopPropagation(); closeLightbox(); }}
         >
-          {/* Filename banner */}
-          <div
-            className="filename-banner"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {selectedId}
-          </div>
-          {/* Navigation buttons */}
           <button
             className="lightbox-nav prev"
             onClick={(e) => { e.stopPropagation(); goPrev(); }}
@@ -302,6 +300,7 @@ const AppContent: React.FC = () => {
               <div className="description-panel">
                 <pre className="description-text">{rawDescription}</pre>
                 <button
+                  className="dialog-toggle"
                   onClick={(e) => {
                     e.stopPropagation();
                     const initDialog = rawDescription ? [rawDescription] : [];

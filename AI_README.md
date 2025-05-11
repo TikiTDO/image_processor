@@ -1,101 +1,116 @@
-<!-- AI_README.md: Guide for the AI assistant on the Image Processor project -->
+<!-- AI_README.md: Comprehensive guide for the AI assistant on the Image Processor project -->
 # AI Assistant Guide: Image Processor Project
 
-This document equips the AI assistant with everything needed to understand, explore, and modify the Image Processor codebase. It covers project structure, technologies, environment, workflows, testing, and AI-specific guidelines.
+This document equips the AI assistant with everything needed to navigate, understand, and modify the Image Processor codebase. It includes architecture overviews, directory structure, development workflows, storage conventions (current and planned), and AI-specific coding guidelines.
 
-## 1. Intent & Base Prompt
-- Refer to **BASE_PROMPT.md** for the foundational system prompt.
-- **Objective**: Enable the AI to navigate, analyze, propose, and apply targeted, minimal changes with confidence and adherence to project conventions.
+---
 
-## 2. High-Level Overview
-- **Backend**: Go HTTP server (Gin) exposing REST and SSE endpoints, serving images and metadata.
-- **Frontend**: React + TypeScript (Vite) UI with drag-and-drop reordering, zoom, image dialogs, and speaker configuration.
-- **Frontend**: React + TypeScript (Vite) UI with:
-  - Drag-and-drop reordering via dnd-kit with activation constraints on both pointer and touch sensors
-  - Reliable click vs drag behavior using pointer events in `SortableItem`
-  - Short click/tap to open image editor (lightbox), right-click for context menu (remove/hide), long-press for modal actions
-  - Zoom controls, path picker, speaker dialog editing, and hidden-image management
-  - CSS flex grid with centered rows and consistent gaps
-- **End-to-End Tests**: Playwright tests validating user interactions.
-- **Orchestration**: `docker-compose.yml` for cohesive local environment.
+## 1. Base Prompt & Goals
+- **Base Prompt**: See `BASE_PROMPT.md` for the foundational system instructions.
+- **Primary Objective**: Enable the AI to propose, draft, and apply precise, minimal changes that adhere to project conventions and pass all tests.
+- **Current Task**: Revise the backend storage to use a single `metadata/` directory with layered subdirectories. Each leaf directory will contain all per-file data (dialog, timestamps, AI annotations, etc.) and a symlink back to the original image. Symlinks must update when files are moved or renamed.
 
-## 3. Directory Structure
-### Root
-- `AI_README.md` ‑ AI-focused guide (this file).
-- `BASE_PROMPT.md` ‑ AI base prompt.
-- `README.md` ‑ human-oriented quickstart.
-- `docker-compose.yml` ‑ container definitions.
-- `.env` ‑ environment variables (e.g., `OPENAI_API_KEY`).
+---
 
-### Backend (`backend/`)
-- `main.go`: entrypoint, env setup, server launch.
-- `internal/api/`: routing and handlers for:
-  - `GET /api/images` (list)
-  - `GET /api/images/:id` (bytes)
-  - `POST /api/images` (upload)
-  - `POST /api/images/:id/reorder`
-  - `GET /api/dirs`
-  - `GET /api/path`
-  - `GET /api/updates` (SSE)
-  - `GET/POST /api/speakers`
-  - `GET/POST /api/images/:id/dialog`
-  - `GET /api/images/:id/description`
-- `internal/storage/`: metadata, EXIF, filename/time helpers.
-- `images/`: default and sample image dirs.
-- `certs/`: self-signed certs (used by frontend dev server).
+## 2. High-Level Architecture
 
-### Frontend (`frontend/`)
-- `src/`: React components, contexts, hooks, services, and utilities.
-- `vite.config.ts`: HTTPS dev server (port 5800), proxies `/api` & `/images` to `BACKEND_URL`.
-- `src/services/api.ts`: fetch wrappers for backend endpoints.
-- `e2e/` & `playwright.config.ts`: Playwright tests and config.
+### Backend (Go + Gin + HTTP/3)
+- Entrypoint: `backend/main.go`
+- Router & Handlers: `backend/internal/api/`
+  • `router.go`: route definitions (images, dialogs, reorder, speakers, dirs)
+  • `handlers.go`: implementations, delegates to `storage`
+- Storage Layer: `backend/internal/storage/`
+  • `metadata.go`: JSON metadata migration and per-ID entry APIs
+  • `dialog.go`: dialog entry load/save/move/delete with SHA256-hashed IDs
+  • `filetime.go` & `exif.go`: fallback timestamp extraction
+- Image Files: `backend/images/` (default), configurable via `IMAGE_DIR`
 
-## 4. Configuration & Environment
-### Backend Environment Variables
-| Name          | Default       | Purpose                                |
-|---------------|---------------|----------------------------------------|
-| IMAGE_DIR     | `images`      | Base image directory                   |
-| DEFAULT_PATH  | ``            | Initial subdirectory path              |
-| SERVER_HOST   | `127.0.0.1`   | Host to bind                           |
-| SERVER_PORT   | `5700`        | Port for HTTP server                   |
+### Frontend (React + TypeScript + Vite)
+- Sources: `frontend/src/`
+- Key features: drag-and-drop (dnd-kit), lightbox, dialogs, speaker settings
+- API client: `src/services/api.ts`
+- Dev server: `vite.config.ts` (HTTPS, proxies `/api` & `/images` to backend)
+- E2E Tests: `frontend/e2e/`, configured in `playwright.config.ts`
 
-### Frontend Environment Variables
-| Name             | Default                      | Purpose                                    |
-|------------------|------------------------------|--------------------------------------------|
-| BACKEND_URL      | `https://localhost:5700`      | Proxy target for `/api` & `/images`        |
-| VITE_API_BASE_URL| *(optional)*                | Client‐side API base URL (absolute calls)   |
-| VITE_WS_URL      | *(optional)*                | SSE/WebSocket URL for updates               |
+### Orchestration & Dev Tools
+- `docker-compose.yml`: backend (5700), frontend (5800), optional e2e service
+- `scripts/setup-dev.sh`: bootstraps pre-commit hooks, linters, Node dependencies
+- Certificates: `backend/certs/` for HTTPS & HTTP/3
 
-> Note: Vite exposes only `VITE_` prefixed vars to client via `import.meta.env`.
+---
 
-## 5. Running Locally
+## 3. Directory Structure Summary
+
+Root
+- AI_README.md            ← This AI-focused guide
+- BASE_PROMPT.md          ← AI base prompt
+- README.md               ← Human quickstart
+- docker-compose.yml      ← Dev containers
+- scripts/                ← setup & utility scripts
+
+backend/
+- main.go                 ← Server startup & config
+- internal/api/           ← HTTP router & handlers
+- internal/storage/       ← Metadata, dialogs, timestamps, EXIF
+- images/                 ← Image storage (subdirs possible)
+- certs/                  ← TLS key & cert
+- tests, tmpdir, go.mod, go.sum, …
+
+frontend/
+- src/                    ← React components, hooks, services
+- e2e/                    ← Playwright end-to-end tests
+- vite.config.ts          ← Dev server & proxy settings
+- package.json, tsconfig.json, …
+
+---
+
+## 4. Current vs Planned Storage Layout
+
+### Current Storage
+- **Images**: stored under `IMAGE_DIR` (default `backend/images`). Subdirectories denote logical groupings.
+- **Timestamps**: legacy `metadata.json` or hashed entries in `metadata/<2-char-prefix>/<fullhash>.json`.
+- **Dialogs**: `dialogs/<hash>.json` (flat) or legacy nested layout.
+
+### Planned Unified Storage (`metadata/`)
+Under each image directory (e.g. `backend/images/` or nested `…/<subpath>/`), replace separate `dialogs/` and hashed JSON files with:
+
+```
+metadata/
+  └── <prefix>/                ← first 2 chars of SHA256(filename)
+       └── <fullhash>/         ← full hex digest
+            ├── image          ← symlink to original image file
+            ├── timestamp.json ← JSON string, RFC3339Nano
+            ├── dialog.json    ← JSON array of strings
+            └── annotations.json ← (future) AI annotations
+```
+
+- **Symlink**: name it `image` (no extension), pointing to the relative path of the image file.
+- **Updates**: On `SaveMetaEntry`, `MoveDialogEntry`, or file rename, the AI must update the corresponding symlink target.
+- **Backward Migration**: Provide one-time migration from existing `dialogs/` and `metadata/` files into the new layout.
+
+---
+
+## 5. Common Commands & Workflows
+
 ### Backend
 ```bash
 cd backend
-# Fetch dependencies
 go mod tidy
-
-# Run the server (HTTPS on default 127.0.0.1:5700)
-go run main.go
-
-# Run unit tests; if temp dirs are not writable, override them:
-mkdir -p .cache/go-build tmpdir
-export GOCACHE=$(pwd)/.cache/go-build
-export TMPDIR=$(pwd)/tmpdir
-export GOTMPDIR=$(pwd)/tmpdir
+# Run server (HTTPS & HTTP/3):
+IMAGE_DIR=images go run main.go
+#
+# Tests (if temp-dir issues):
+mkdir -p tmpdir
+export TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir
 go test ./...
 ```
 
 ### Frontend
 ```bash
 cd frontend
-npm install            # or yarn/pnpm
-npm run dev            # https://localhost:5800 (HTTPS with backend certs)
-npm test               # Vitest
-```
-You can also bootstrap all local tooling (pre-commit hooks, linters, frontend deps) with:
-```bash
-bash scripts/setup-dev.sh
+npm install
+npm run dev       # https://localhost:5800
+npm test          # Vitest unit tests
 ```
 
 ### End-to-End
@@ -103,46 +118,41 @@ bash scripts/setup-dev.sh
 npx playwright test --ignore-certificate-errors
 ```
 
-## 6. Docker Compose
+### Docker Compose
 ```bash
-docker-compose up              # starts backend (5700), frontend (5800)
-# E2E (optional):
-docker-compose up --exit-code-from e2e frontend e2e
+docker-compose up          # backend, frontend
+docker-compose up --exit-code-from e2e frontend e2e  # run E2E
 ```
-Services:
-- **backend**: Go + reflex hot-reload on 5700
-- **frontend**: Vite HTTPS dev server on 5800
-- **e2e**: Playwright runner (if enabled)
 
-## 7. AI Development Workflow
-### Exploration
-- Use `ls`, `grep -R`, and running tests to understand code.
+---
 
-### Patching
-1. Draft minimal `apply_patch` diffs:
+## 6. AI Patching & Coding Guidelines
+
+1. **Explore**: use `ls`, `grep -R`, `go test`, `npm test`, `npx playwright test` to understand code and verify changes.
+2. **Draft Patches**: use `apply_patch` blocks with minimal, targeted diffs:
    ```bash
    apply_patch << 'EOF'
    *** Begin Patch
-   *** Update File: path/to/file
-   @@ -old,+new @@
-   -oldLine
-   +newLine
+   *** Update File: path/to/file.go
+   @@ -oldLineStart,oldCount +newLineStart,newCount @@
+   -oldCode()
+   +newCode()
    *** End Patch
    EOF
    ```
-2. Run all tests: `go test`, `npm test`, `npx playwright test`.
-3. For UI/interaction updates, consider:
-   - dnd-kit activation constraints (`activationConstraint` on `PointerSensor`/`TouchSensor`)
-   - custom pointer-event handlers (`onPointerDown/Move/Up`) in `SortableItem` to reconcile click, drag, long-press, and context-menu actions.
+3. **Testing**: after any backend change, run `go test ./...`. After frontend change, run `npm test`. For E2E, run `npx playwright test`.
+4. **Root-Cause Fixes**: address the source of issues, not just symptoms. Preserve existing behavior and tests unless intentional change.
+5. **No New Dependencies**: avoid adding heavy libraries. Leverage stdlib and existing modules.
+6. **Ask When Unsure**: request clarification if internal logic is unclear or tests break unexpectedly.
+7. **Commit to git**: When you are ready so submit your code for review, commit it.
 
-### Best Practices
-- Fix root causes; avoid broad refactors.
-- Preserve existing tests and workflows.
-- Parameterize ports/URLs; avoid hardcoding.
-- Document all non-obvious changes.
+---
 
-### Constraints
-- Ask clarifying questions if needed.
-- No new heavy dependencies or license headers.
+## 7. Next Steps
+1. **Implement Unified Metadata Layout**: refactor storage APIs to read/write dialog, timestamp, and annotations under the new `metadata/<prefix>/<fullhash>/` directories.
+2. **Symlink Management**: on file uploads, renames, and reorder operations, create/update a symlink named `image` in each leaf metadata folder pointing to the actual image.
+3. **Migration Tooling**: write a one-time migration to ingest existing `dialogs/` and timestamp entries into the new layout.
+4. **Extend Storage Model**: add `annotations.json` to accommodate future AI-generated metadata.
 
-<!-- EOF: AI assistant guide -->
+---
+*End of AI Assistant Guide*

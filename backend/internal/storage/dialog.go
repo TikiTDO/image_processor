@@ -24,82 +24,113 @@ func HashString(s string) string {
 // LoadDialogFile reads dialog entries for the given id from a file-based store.
 // Dialog files are organized under baseDir/dialogs/<first two hash chars>/<fullhash>.json.
 func LoadDialogFile(baseDir, id string) ([]string, error) {
-   h := hashString(id)
-   dir := filepath.Join(baseDir, "dialogs")
-   file := filepath.Join(dir, h+".json")
-   data, err := ioutil.ReadFile(file)
-   if err != nil {
-       if os.IsNotExist(err) {
-           // try legacy nested directory format
-           legacyFile := filepath.Join(baseDir, "dialogs", h[:2], h+".json")
-           data, err = ioutil.ReadFile(legacyFile)
-           if err != nil {
-               if os.IsNotExist(err) {
-                   return []string{}, nil
-               }
+   // Compute content-based hash for new layout
+   fullpath := filepath.Join(baseDir, id)
+   contentHash, err := HashFile(fullpath)
+   if err == nil {
+       leafFile := filepath.Join(baseDir, "metadata", contentHash[:2], contentHash, "dialog.json")
+       data, err := ioutil.ReadFile(leafFile)
+       if err == nil {
+           var entries []string
+           if err := json.Unmarshal(data, &entries); err != nil {
                return nil, err
            }
-       } else {
+           return entries, nil
+       }
+       if !os.IsNotExist(err) {
            return nil, err
        }
+   } else {
+       // If the image file is missing or unreadable, no dialog exists
+       return []string{}, nil
    }
-   var entries []string
-   if err := json.Unmarshal(data, &entries); err != nil {
+   // Fallback to legacy flat and nested dialogs directory (filename-based hashing)
+   oldHash := hashString(id)
+   flatDir := filepath.Join(baseDir, "dialogs")
+   flatFile := filepath.Join(flatDir, oldHash+".json")
+   data, err = ioutil.ReadFile(flatFile)
+   if err == nil {
+       var entries []string
+       if err := json.Unmarshal(data, &entries); err != nil {
+           return nil, err
+       }
+       return entries, nil
+   }
+   if !os.IsNotExist(err) {
        return nil, err
    }
-   return entries, nil
+   // Legacy nested format
+   nestedFile := filepath.Join(baseDir, "dialogs", oldHash[:2], oldHash+".json")
+   data, err = ioutil.ReadFile(nestedFile)
+   if err == nil {
+       var entries []string
+       if err := json.Unmarshal(data, &entries); err != nil {
+           return nil, err
+       }
+       return entries, nil
+   }
+   if os.IsNotExist(err) {
+       return []string{}, nil
+   }
+   return nil, err
 }
 
 // SaveDialogFile writes dialog entries for the given id to a file-based store.
 // It creates necessary subdirectories under baseDir/dialogs.
 func SaveDialogFile(baseDir, id string, entries []string) error {
-   h := hashString(id)
-   dir := filepath.Join(baseDir, "dialogs")
-   if err := os.MkdirAll(dir, 0755); err != nil {
+   // Compute content-based hash for this image
+   fullpath := filepath.Join(baseDir, id)
+   contentHash, err := HashFile(fullpath)
+   if err != nil {
        return err
    }
-   file := filepath.Join(dir, h+".json")
+   // Create leaf directory under metadata layout
+   leafDir := filepath.Join(baseDir, "metadata", contentHash[:2], contentHash)
+   if err := os.MkdirAll(leafDir, 0755); err != nil {
+       return err
+   }
+   // Ensure symlink to image file
+   imgPath := filepath.Join(baseDir, id)
+   rel, err := filepath.Rel(leafDir, imgPath)
+   if err != nil {
+       rel = imgPath
+   }
+   link := filepath.Join(leafDir, "image")
+   _ = os.Remove(link)
+   _ = os.Symlink(rel, link)
+   // Write dialog entries to dialog.json
+   file := filepath.Join(leafDir, "dialog.json")
    data, err := json.MarshalIndent(entries, "", "  ")
    if err != nil {
        return err
    }
    return ioutil.WriteFile(file, data, 0644)
 }
-// DeleteDialogEntry removes the dialog file for a given image ID.
-// It deletes the JSON file stored under baseDir/dialogs.
+// DeleteDialogEntry removes the dialog file for a given image ID or hash.
 func DeleteDialogEntry(baseDir, id string) error {
-   h := hashString(id)
-   // Flat layout: dialogs/<hash>.json
-   file := filepath.Join(baseDir, "dialogs", h+".json")
-   if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
-       return err
+   var h string
+   // If id is a full hash, use directly; otherwise compute hash from file content
+   if len(id) == 64 && isHex(id) {
+       h = id
+   } else {
+       fullpath := filepath.Join(baseDir, id)
+       var err error
+       h, err = HashFile(fullpath)
+       if err != nil {
+           // Nothing to delete if file absent
+           if os.IsNotExist(err) {
+               return nil
+           }
+           return err
+       }
    }
+   // Remove new layout dialog.json
+   leafFile := filepath.Join(baseDir, "metadata", h[:2], h, "dialog.json")
+   _ = os.Remove(leafFile)
    return nil
 }
 
-// MoveDialogEntry renames a dialog file from oldID to newID in hashed storage.
-// It also attempts to move from legacy nested layout.
+// MoveDialogEntry is a no-op under content-based hashing (dialog IDs stable).
 func MoveDialogEntry(baseDir, oldID, newID string) error {
-   hOld := hashString(oldID)
-   hNew := hashString(newID)
-   // Determine old file path (flat or legacy nested)
-   flatDir := filepath.Join(baseDir, "dialogs")
-   oldFlat := filepath.Join(flatDir, hOld+".json")
-   oldNested := filepath.Join(flatDir, hOld[:2], hOld+".json")
-   src := oldFlat
-   if _, err := os.Stat(src); os.IsNotExist(err) {
-       src = oldNested
-   }
-   // Ensure destination directory exists
-   if err := os.MkdirAll(flatDir, 0755); err != nil {
-       return err
-   }
-   dst := filepath.Join(flatDir, hNew+".json")
-   if err := os.Rename(src, dst); err != nil {
-       if os.IsNotExist(err) {
-           return nil
-       }
-       return err
-   }
    return nil
 }
