@@ -144,7 +144,7 @@ docker-compose up --exit-code-from e2e frontend e2e  # run E2E
 4. **Root-Cause Fixes**: address the source of issues, not just symptoms. Preserve existing behavior and tests unless intentional change.
 5. **No New Dependencies**: avoid adding heavy libraries. Leverage stdlib and existing modules.
 6. **Ask When Unsure**: request clarification if internal logic is unclear or tests break unexpectedly.
-7. **Commit to git**: When you are ready so submit your code for review, commit it.
+7. **Commit to git**: When you are ready so submit your code for review, commit. You should explicitly author your commits as `AI Coder` at `ai@sereth.com`.
 
 ---
 
