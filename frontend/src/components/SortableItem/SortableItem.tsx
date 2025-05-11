@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -36,6 +36,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
   // Context menu visibility and position
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const menuRef = useRef<HTMLDivElement | null>(null);
   // Long press detection
   const longPressTimer = useRef<number>();
   const longPressTriggered = useRef(false);
@@ -66,6 +67,17 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     setMenuVisible(false);
     setModalVisible(false);
   };
+  // Close context menu when clicking outside
+  useEffect(() => {
+    if (!menuVisible) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        closeMenus();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuVisible]);
   return (
     <div
       ref={setNodeRef}
@@ -105,11 +117,12 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       {/* Context menu dropdown */}
       {menuVisible && (
         <div
+          ref={menuRef}
           className="context-menu"
-          style={{ position: 'fixed', top: menuPos.y, left: menuPos.x, background: '#fff', border: '1px solid #ccc', zIndex: 1000 }}
+          style={{ position: 'fixed', top: menuPos.y, left: menuPos.x, background: '#fff', border: '1px solid #ccc', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', padding: '4px 0', zIndex: 1000 }}
         >
-          <button onClick={() => { onRemove && onRemove(); closeMenus(); }}>Remove Image</button>
-          <button onClick={() => { onHide && onHide(); closeMenus(); }}>Hide Image</button>
+          <button className="context-menu-item" onClick={() => { onRemove && onRemove(); closeMenus(); }}>Remove Image</button>
+          <button className="context-menu-item" onClick={() => { onHide && onHide(); closeMenus(); }}>Hide Image</button>
         </div>
       )}
       {/* Modal for long press */}
