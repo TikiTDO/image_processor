@@ -34,12 +34,13 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     transform: CSS.Transform.toString(transform),
     transition,
   };
-  // Press interactions: click, long-press, context menu
+  // Context menu and long press modal visibility
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const closeMenus = () => { setMenuVisible(false); setModalVisible(false); };
+  // Press handler for click, long press (modal), and context menu (dropdown)
   const pressHandlers = usePress({
     onClick: (e) => {
       e.preventDefault();
@@ -48,12 +49,14 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
     },
     onLongPress: (e) => {
       e.preventDefault();
-      setMenuPos({ x: e.clientX, y: e.clientY });
-      setMenuVisible(true);
+      const evt = e as React.PointerEvent;
+      setMenuPos({ x: evt.clientX, y: evt.clientY });
+      setModalVisible(true);
     },
     onContextMenu: (e) => {
       e.preventDefault();
-      setMenuPos({ x: e.clientX, y: e.clientY });
+      const evt = e as React.MouseEvent;
+      setMenuPos({ x: evt.clientX, y: evt.clientY });
       setMenuVisible(true);
     },
   });
@@ -75,7 +78,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       className="item"
       {...attributes}
       {...listeners}
-      {...pressHandlers}
     >
       {/* Edit icon for accessibility */}
       <button
@@ -86,10 +88,11 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
         }}
         aria-label="Edit image"
       >✎</button>
-      {/* Image */}
+      {/* Image: drag via container, handle click/press via pressHandlers */}
       <img
         src={url}
         alt={id}
+        {...pressHandlers}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
