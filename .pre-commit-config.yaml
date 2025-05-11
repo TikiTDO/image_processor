@@ -19,3 +19,32 @@ repos:
         entry: docker-compose -f docker-compose.yml config
         language: system
         files: ^docker-compose\.(yml|yaml)$
+
+  # Go formatting and linting
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.4.0
+    hooks:
+      - id: go-fmt
+      - id: go-vet
+      - id: go-imports
+
+  # JavaScript/TypeScript linting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.49.0
+    hooks:
+      - id: eslint
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+
+  # Prettier formatting for code, JSON, Markdown, etc.
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.8.8
+    hooks:
+      - id: prettier
+        files: \.(js|jsx|ts|tsx|css|html|json|md)$
+
+  # Shell script linting
+  - repo: https://github.com/koalaman/pre-commit-shellcheck
+    rev: v1.3.0
+    hooks:
+      - id: shellcheck
+        files: \.(sh|bash)$
