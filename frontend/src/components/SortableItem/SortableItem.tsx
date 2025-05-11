@@ -83,17 +83,10 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       ref={setNodeRef}
       style={style}
       className="item"
+      {...attributes}
+      {...listeners}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onClick={(e) => {
-        e.stopPropagation();
-        // short click: open editor if not dragging/long-press/menu
-        if (!isDragging && !longPressTriggered.current && !menuVisible) {
-          onClick && onClick();
-        }
-        closeMenus();
-      }}
     >
       {/* Edit icon for accessibility */}
       <button
@@ -104,18 +97,25 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
         }}
         aria-label="Edit image"
       >✎</button>
-      {/* Drag handle: click or press to reorder */}
-      <div
-        className="drag-handle"
-        {...attributes}
-        {...listeners}
-      >
-        {isDragging ? '✋' : '☰'}
-      </div>
       {/* Image */}
       <img
         src={url}
         alt={id}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isDragging && !longPressTriggered.current && !menuVisible) {
+            onClick && onClick();
+          }
+          closeMenus();
+        }}
+        onTouchEnd={(e) => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+          e.stopPropagation();
+          if (!longPressTriggered.current && !menuVisible) {
+            onClick && onClick();
+          }
+          closeMenus();
+        }}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
