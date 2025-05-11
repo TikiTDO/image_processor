@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 export interface UsePressOptions {
   onClick?: (e: React.PointerEvent) => void;

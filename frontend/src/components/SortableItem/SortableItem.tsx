@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSpeakerContext } from '../../context/SpeakerContext';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { usePress } from '../../hooks/usePress';
 
 export interface SortableItemProps {
   id: string;
