@@ -40,37 +40,33 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
   const [modalVisible, setModalVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const closeMenus = () => { setMenuVisible(false); setModalVisible(false); };
-  // Pointer tracking for long-press vs drag vs click
-  const pointerStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const longPressTimer = useRef<number>();
-  const longPressTriggered = useRef(false);
-  const draggingRef = useRef(false);
+  // Long-press detection for touch
   const LONG_DELAY = 600;
   const MOVE_THRESHOLD = 5;
-  const handlePointerDown = (e: React.PointerEvent) => {
-    pointerStart.current = { x: e.clientX, y: e.clientY };
+  const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const longPressTimer = useRef<number>();
+  const longPressTriggered = useRef(false);
+  const handleImgTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     longPressTriggered.current = false;
-    draggingRef.current = false;
     longPressTimer.current = window.setTimeout(() => {
       longPressTriggered.current = true;
       setModalVisible(true);
     }, LONG_DELAY);
   };
-  const handlePointerMove = (e: React.PointerEvent) => {
-    const dx = e.clientX - pointerStart.current.x;
-    const dy = e.clientY - pointerStart.current.y;
-    if (!draggingRef.current && Math.hypot(dx, dy) > MOVE_THRESHOLD) {
-      draggingRef.current = true;
-      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  const handleImgTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStart.current.x;
+    const dy = e.touches[0].clientY - touchStart.current.y;
+    if (Math.hypot(dx, dy) > MOVE_THRESHOLD && longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
     }
   };
-  const handlePointerUp = (e: React.PointerEvent) => {
+  const handleImgTouchEnd = (e: React.TouchEvent) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (!longPressTriggered.current && !draggingRef.current && !menuVisible && !modalVisible) {
+    if (!longPressTriggered.current) {
       onClick && onClick();
     }
     longPressTriggered.current = false;
-    draggingRef.current = false;
   };
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,10 +91,6 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       className="item"
       {...attributes}
       {...listeners}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onContextMenu={handleContextMenu}
     >
       {/* Edit icon for accessibility */}
       <button
@@ -109,10 +101,19 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
         }}
         aria-label="Edit image"
       >✎</button>
-      {/* Image: drag via container, handle click/press via pressHandlers */}
+      {/* Image: drag via container, handle click, context-menu, long-press */}
       <img
         src={url}
         alt={id}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick && onClick();
+          closeMenus();
+        }}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleImgTouchStart}
+        onTouchMove={handleImgTouchMove}
+        onTouchEnd={handleImgTouchEnd}
       />
       <div className="filename">{id}</div>
       {/* Preview first dialog line with speaker-specific color */}
