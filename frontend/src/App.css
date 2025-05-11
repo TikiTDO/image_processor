@@ -156,7 +156,7 @@
 
 .item {
   width: 150px;
-  margin: 5px;
+  /* Removed individual margins; flex gap handles spacing */
   padding: 5px;
   border: 1px solid #ccc;
   cursor: default;
