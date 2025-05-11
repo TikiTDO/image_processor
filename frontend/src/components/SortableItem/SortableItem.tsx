@@ -18,6 +18,7 @@ export interface SortableItemProps {
 }
 
 const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, onClick, onRemove, onHide }) => {
+  // Configure sortable drag behavior via a handle
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   // Parse dialogLine into speakerId and text for preview
   const { colors } = useSpeakerContext();
@@ -89,9 +90,14 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       ref={setNodeRef}
       style={style}
       className="item"
-      {...attributes}
-      {...listeners}
     >
+      {/* Drag handle: separate ordering logic */}
+      <button
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder"
+      >≡</button>
       {/* Edit icon for accessibility */}
       <button
         className="edit-icon"

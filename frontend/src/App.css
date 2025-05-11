@@ -232,6 +232,37 @@
   display: block;
   cursor: pointer;
 }
+/* Drag handle for reordering (separate from image content) */
+.drag-handle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 10;
+  font-size: 1rem;
+  padding: 0;
+  transition: background 0.2s;
+}
+.drag-handle:hover {
+  background: #e0e0e0;
+}
+@media (prefers-color-scheme: dark) {
+  .drag-handle {
+    background: #333;
+    color: #eee;
+  }
+  .drag-handle:hover {
+    background: #444;
+  }
+}
 /* Drag handle for reordering */
 
 .filename {

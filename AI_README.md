@@ -27,6 +27,20 @@ This document equips the AI assistant with everything needed to navigate, unders
 
 ### Frontend (React + TypeScript + Vite)
 - Sources: `frontend/src/`
+- UI Components & Styling:
+  • SortableItem (`components/SortableItem`): separates content (`.item`, image, dialog-preview) from ordering handle (`.drag-handle`).
+    - `.item` wrapper holds image, dialog preview (`.dialog-preview`), and action buttons.
+    - `.drag-handle` (separate button) triggers dnd-kit sorting; prevents accidental drags on image content.
+  • ImageGrid (`components/ImageGrid`): grid layout with drag-and-drop context via dnd-kit; fetches dialog previews.
+  • ZoomControls (`components/ZoomControls`): uses `.zoom-btn`, `.zoom-number-btn`, and `.zoom-menu` classes.
+    - Minus/plus buttons adjust zoom by preset step (e.g., 50px).
+    - Central button toggles an anchored slider menu; outside clicks close it.
+    - Theme-aware styling with CSS variables/text-stroke for contrast.
+  • Styling Conventions:
+    - CSS classes in `kebab-case`; scoped per component.
+    - Prefer theme-aware variables and media queries (`prefers-color-scheme`).
+    - Use `text-stroke` and `text-shadow` for legibility on colored backgrounds.
+    - Avoid inline styles except for dynamic positioning; prefer CSS transitions and flex layouts.
 - Key features: drag-and-drop (dnd-kit), lightbox, dialogs, speaker settings
 - API client: `src/services/api.ts`
 - Dev server: `vite.config.ts` (HTTPS, proxies `/api` & `/images` to backend)
@@ -153,6 +167,7 @@ docker-compose up --exit-code-from e2e frontend e2e  # run E2E
 2. **Symlink Management**: on file uploads, renames, and reorder operations, create/update a symlink named `image` in each leaf metadata folder pointing to the actual image.
 3. **Migration Tooling**: write a one-time migration to ingest existing `dialogs/` and timestamp entries into the new layout.
 4. **Extend Storage Model**: add `annotations.json` to accommodate future AI-generated metadata.
+5. **UI Refinements**: separate ordering handles from content, improve toolbar flexibility and theme awareness, and ensure dialog toggles remain legible in all color schemes.
 
 ---
 *End of AI Assistant Guide*
