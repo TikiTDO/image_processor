@@ -62,6 +62,11 @@ const AppContent: React.FC = () => {
   const [editMode, setEditMode] = useState<boolean>(false);
   // Cache of dialogs for all images: id -> dialog lines
   const [dialogMap, setDialogMap] = useState<Record<string, string[]>>({});
+  // Hidden images state
+  const [hiddenIDs, setHiddenIDs] = useState<string[]>([]);
+  const [showHiddenModal, setShowHiddenModal] = useState(false);
+  // Compute visible images (filter out hidden)
+  const visibleImages = images.filter((img) => !hiddenIDs.includes(img.id));
   const { colors: speakerColors, names: speakerNames } = useSpeakerContext();
   const suppressClicks = useRef(false);
   // Handlers to navigate lightbox images
@@ -142,6 +147,20 @@ const AppContent: React.FC = () => {
     localStorage.setItem(STORAGE_ZOOM_KEY, zoomLevel.toString());
   }, [zoomLevel]);
 
+  // Remove and hide image handlers
+  const removeImage = async (id: string) => {
+    const query = path ? `?path=${encodeURIComponent(path)}` : '';
+    try {
+      const res = await fetch(`/api/images/${encodeURIComponent(id)}${query}`, { method: 'DELETE' });
+      if (!res.ok) console.error('Delete failed:', res.status);
+    } catch (err) {
+      console.error('Error deleting image:', err);
+    }
+    fetchImages();
+  };
+  const hideImage = (id: string) => {
+    setHiddenIDs((prev) => [...prev, id]);
+  };
   const toggleLightbox = (id: string) => {
     if (suppressClicks.current) return;
     setSelectedId((prev) => (prev === id ? null : id));
@@ -224,9 +243,12 @@ const AppContent: React.FC = () => {
         <button onClick={() => setEditMode((v) => !v)}>
           {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
         </button>
+        <button onClick={() => setShowHiddenModal(true)}>
+          Hidden Images ({hiddenIDs.length})
+        </button>
       </div>
       <ImageGrid
-        images={images}
+        images={visibleImages}
         zoomLevel={zoomLevel}
         path={path}
         bustMap={bustMap}
@@ -242,6 +264,8 @@ const AppContent: React.FC = () => {
           fetchImages();
         }}
         onItemClick={toggleLightbox}
+        onRemoveImage={removeImage}
+        onHideImage={hideImage}
       />
       {showSpeakerConfig && (
         <SpeakerConfigModal onClose={() => setShowSpeakerConfig(false)} />
@@ -388,6 +412,43 @@ const AppContent: React.FC = () => {
           >
             ▶
           </button>
+        </div>
+      )}
+      {/* Hidden Images Modal */}
+      {showHiddenModal && (
+        <div
+          className="hidden-modal-overlay"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000 }}
+          onClick={() => setShowHiddenModal(false)}
+        >
+          <div
+            className="hidden-modal"
+            style={{ background: '#fff', padding: '1rem', margin: '5% auto', maxWidth: '400px', borderRadius: '4px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Hidden Images</h2>
+            {hiddenIDs.length > 0 ? (
+              hiddenIDs.map((hid) => {
+                const meta = images.find((img) => img.id === hid);
+                return (
+                  <div key={hid} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <img
+                      src={meta?.url}
+                      alt={hid}
+                      style={{ width: 50, height: 50, objectFit: 'cover', marginRight: '0.5rem' }}
+                    />
+                    <span style={{ flexGrow: 1 }}>{hid}</span>
+                    <button onClick={() => setHiddenIDs((prev) => prev.filter((id) => id !== hid))}>
+                      Unhide
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <p>No hidden images.</p>
+            )}
+            <button onClick={() => setShowHiddenModal(false)}>Close</button>
+          </div>
         </div>
       )}
     </div>

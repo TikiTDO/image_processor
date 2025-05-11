@@ -24,6 +24,10 @@ interface ImageGridProps {
   /** Callback after reorder: movedId, prevNeighborId, nextNeighborId */
   onReorderComplete: (movedId: string, prevId: string | null, nextId: string | null) => void;
   onItemClick: (id: string) => void;
+  /** Called when Remove Image is selected */
+  onRemoveImage?: (id: string) => void;
+  /** Called when Hide Image is selected */
+  onHideImage?: (id: string) => void;
 }
 
 const ImageGrid: React.FC<ImageGridProps> = ({
@@ -33,6 +37,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   bustMap,
   onReorderComplete,
   onItemClick,
+  onRemoveImage,
+  onHideImage,
 }) => {
   const isDragging = useRef(false);
   // Map from image ID to its first dialog line (e.g. "0:Hello"), loaded via bulk API
@@ -107,6 +113,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({
                   if (isDragging.current) return;
                   onItemClick(img.id);
                 }}
+                onRemove={() => onRemoveImage && onRemoveImage(img.id)}
+                onHide={() => onHideImage && onHideImage(img.id)}
               />
             );
           })}

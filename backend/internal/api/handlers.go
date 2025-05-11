@@ -288,6 +288,36 @@ func handleGetImage(c *gin.Context) {
    }
    c.File(fullPath)
 }
+// handleDeleteImage deletes the image file and associated metadata and dialogs.
+func handleDeleteImage(c *gin.Context) {
+   sub := c.Query("path")
+   idHash := c.Param("id")
+   // Determine base directory
+   baseDir := ImageDir
+   if sub != "" {
+       baseDir = filepath.Join(ImageDir, sub)
+   }
+   // Resolve hash ID to filename
+   filename, err := findFilenameByHash(baseDir, idHash)
+   if err != nil {
+       c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resolve image ID"})
+       return
+   }
+   if filename == "" {
+       c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+       return
+   }
+   // Delete image file
+   fullPath := filepath.Join(baseDir, filename)
+   if err := os.Remove(fullPath); err != nil {
+       c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete image file"})
+       return
+   }
+   // Delete metadata and dialog entries (ignore errors)
+   _ = storage.DeleteMetaEntry(baseDir, filename)
+   _ = storage.DeleteDialogEntry(baseDir, filename)
+   c.Status(http.StatusNoContent)
+}
 
 // handleGetDirs lists subdirectories under a given path.
 func handleGetDirs(c *gin.Context) {

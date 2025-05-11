@@ -65,6 +65,17 @@ func SaveDialogFile(baseDir, id string, entries []string) error {
    }
    return ioutil.WriteFile(file, data, 0644)
 }
+// DeleteDialogEntry removes the dialog file for a given image ID.
+// It deletes the JSON file stored under baseDir/dialogs.
+func DeleteDialogEntry(baseDir, id string) error {
+   h := hashString(id)
+   // Flat layout: dialogs/<hash>.json
+   file := filepath.Join(baseDir, "dialogs", h+".json")
+   if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
+       return err
+   }
+   return nil
+}
 
 // MoveDialogEntry renames a dialog file from oldID to newID in hashed storage.
 // It also attempts to move from legacy nested layout.

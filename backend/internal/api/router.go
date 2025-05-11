@@ -45,6 +45,9 @@ func SetupRouter() *gin.Engine {
    r.GET("/api/images/:id", handleGetImage)
    r.GET("/api/dirs", handleGetDirs)
    r.POST("/api/images/:id/reorder", handleReorder)
+  
+   // Delete image endpoint
+   r.DELETE("/api/images/:id", handleDeleteImage)
    // Static file serving with ETag
    r.GET("/images/*filepath", func(c *gin.Context) {
        fp := c.Param("filepath")
