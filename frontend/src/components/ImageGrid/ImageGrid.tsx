@@ -44,8 +44,14 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   // Map from image ID to its first dialog line (e.g. "0:Hello"), loaded via bulk API
   const [dialogMap, setDialogMap] = useState<Record<string, string>>({});
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor)
+    // Pointer sensor for mouse and pen input, with minimum drag distance
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    // Touch sensor for touch input, with a small delay before activation to avoid conflicts with tap
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
   );
 
   const handleDragEnd = (event: any) => {
