@@ -37,4 +37,12 @@ if [ -d "frontend" ]; then
   (cd frontend && npm install)
 fi
 
+# Tidy Go modules for backend (fetch HTTP/3 support)
+if [ -d "backend" ]; then
+  echo "Tidying Go modules (ensure HTTP/3 support)..."
+  (cd backend && mkdir -p .cache/go-build tmpdir && \
+    export GOCACHE=$(pwd)/.cache/go-build TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir && \
+    go mod tidy)
+fi
+
 echo "Setup complete. To activate the Python environment, run 'source .venv/bin/activate'."

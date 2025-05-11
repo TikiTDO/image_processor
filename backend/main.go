@@ -1,12 +1,16 @@
 package main
 
 import (
+   "crypto/tls"
    "log"
    "math/rand"
+   "net/http"
    "os"
+   "path/filepath"
    "time"
 
    "github.com/gin-gonic/gin"
+   "github.com/lucas-clemente/quic-go/http3"
    "image-processor-backend/internal/api"
 )
 
@@ -49,7 +53,30 @@ func main() {
        port = "5700"
    }
    addr := host + ":" + port
-   log.Printf("Server running on %s", addr)
-   // Start the server on the configured address
-   r.Run(addr)
+   log.Printf("Server running on %s (HTTPS & HTTP/3)", addr)
+   // Paths to TLS certificate and key
+   certFile := filepath.Join(".", "certs", "cert.pem")
+   keyFile := filepath.Join(".", "certs", "key.pem")
+   // TLS configuration with HTTP/3 support
+   tlsConfig := &tls.Config{
+       NextProtos: []string{"h3", "http/1.1"},
+   }
+   // HTTP server for HTTP/1.1 and HTTP/2
+   server := &http.Server{
+       Addr:      addr,
+       Handler:   r,
+       TLSConfig: tlsConfig,
+   }
+   // Start HTTP/3 (QUIC) server
+   go func() {
+       log.Printf("Starting HTTP/3 server on %s", addr)
+       if err := http3.ListenAndServe(addr, certFile, keyFile, r); err != nil {
+           log.Fatalf("HTTP/3 server error: %v", err)
+       }
+   }()
+   // Start HTTPS server (HTTP/1.1 & HTTP/2)
+   log.Printf("Starting HTTPS server on %s", addr)
+   if err := server.ListenAndServeTLS(certFile, keyFile); err != nil {
+       log.Fatalf("HTTPS server error: %v", err)
+   }
 }

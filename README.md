@@ -12,13 +12,16 @@ This repository contains a Go-based backend and a React + TypeScript frontend fo
 3. Ensure Go can write to your system temp directory (default: `/tmp`) for build caches.
 4. Run `go mod tidy` to fetch dependencies.
 5. Place your `.jpg`, `.jpeg`, and `.png` files into the `backend/images/` directory (it will be created automatically on first run).
-6. Run the server:
+6. Run the server (HTTPS with HTTP/3 support):
    ```sh
    # Optionally override listening address and port (defaults: 0.0.0.0 and 5700)
    # export SERVER_HOST=127.0.0.1 SERVER_PORT=5700
    go run main.go
    ```
-   The server listens on the configured address and port (default http://localhost:5700).
+   The server listens on the configured address and port using TLS:
+   - HTTPS (HTTP/1.1 & HTTP/2) at https://localhost:5700
+   - HTTP/3 (QUIC) negotiated automatically by compatible clients over UDP port 5700
+   > Note: You may need to trust the self-signed certificate in your browser or client.
 7. Run tests:
    Go by default writes build artifacts to `/tmp`. If you encounter a "permission denied" error when running tests (common in restricted or containerized environments), override the temp directory:
    ```sh
