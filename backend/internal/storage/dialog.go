@@ -24,6 +24,7 @@ func HashString(s string) string {
 // LoadDialogFile reads dialog entries for the given id from a file-based store.
 // Dialog files are organized under baseDir/dialogs/<first two hash chars>/<fullhash>.json.
 func LoadDialogFile(baseDir, id string) ([]string, error) {
+   var data []byte
    // Compute content-based hash for new layout
    fullpath := filepath.Join(baseDir, id)
    contentHash, err := HashFile(fullpath)

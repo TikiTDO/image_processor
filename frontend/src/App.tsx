@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
 import { SpeakerProvider, useSpeakerContext } from './context/SpeakerContext';
@@ -109,11 +109,11 @@ const AppContent: React.FC = () => {
     [selectedId, path]
   );
 
-  const fetchImages = () => {
+  const fetchImages = useCallback(() => {
     getImages(path)
       .then(setImages)
       .catch((err) => console.error('Error fetching images:', err));
-  };
+  }, [path]);
 
   useEffect(() => {
     fetchImages();
@@ -127,9 +127,9 @@ const AppContent: React.FC = () => {
     }
   }, []);
   // Subscribe to backend update events and refresh images
-  useSSE('/api/updates', () => {
+  useSSE('/api/updates', useCallback(() => {
     fetchImages();
-  });
+  }, [fetchImages]));
   // Load all dialogs in one request when path changes
   useEffect(() => {
     getImageDialogs(path)

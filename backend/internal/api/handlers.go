@@ -414,29 +414,38 @@ func handleReorder(c *gin.Context) {
    // use resolved filename as ID for reordering
    id := filename
    images := getImages(sub)
-   idToTs := make(map[string]time.Time)
+   // Build mapping from image ID to timestamp
+   idToTs := make(map[string]time.Time, len(images))
    for _, im := range images {
        t, _ := time.Parse(time.RFC3339Nano, im.Timestamp)
-       idToTs[im.ID] = t
+       // For images with identical content (same hash), preserve first timestamp
+       if _, exists := idToTs[im.ID]; !exists {
+           idToTs[im.ID] = t
+       }
    }
-   var prevT, nextT *time.Time
+   // Determine previous and next timestamps if provided
+   var prevT, nextT time.Time
+   var havePrev, haveNext bool
    if req.PrevID != "" {
        if t, ok := idToTs[req.PrevID]; ok {
-           prevT = &t
+           prevT = t
+           havePrev = true
        }
    }
    if req.NextID != "" {
        if t, ok := idToTs[req.NextID]; ok {
-           nextT = &t
+           nextT = t
+           haveNext = true
        }
    }
+   // Compute new timestamp based on neighbors
    var newT time.Time
-   if prevT != nil && nextT != nil {
-       diff := nextT.Sub(*prevT)
+   if havePrev && haveNext {
+       diff := nextT.Sub(prevT)
        newT = prevT.Add(diff / 2)
-   } else if prevT != nil {
+   } else if havePrev {
        newT = prevT.Add(time.Second)
-   } else if nextT != nil {
+   } else if haveNext {
        newT = nextT.Add(-time.Second)
    } else {
        newT = time.Now()
@@ -584,6 +593,8 @@ func getImages(sub string) []ImageResponse {
    var imgs []img
    // Build base API URL for fetching images by hash ID
    baseAPI := "/api/images"
+   // Track seen content hashes to avoid duplicate entries
+   seen := make(map[string]bool)
    for _, fi := range files {
        if fi.IsDir() {
            continue
@@ -617,6 +628,11 @@ func getImages(sub string) []ImageResponse {
        if err != nil {
            continue
        }
+       // Skip duplicate images with identical content hash
+       if seen[hash] {
+           continue
+       }
+       seen[hash] = true
        // construct URL endpoint for this image
        var imgURL string
        if sub != "" {
