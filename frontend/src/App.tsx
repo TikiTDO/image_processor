@@ -126,10 +126,9 @@ const AppContent: React.FC = () => {
         .catch((err) => console.error('Error fetching default path:', err));
     }
   }, []);
-  // Subscribe to backend update events and refresh images
-  useSSE('/api/updates', useCallback(() => {
-    fetchImages();
-  }, [fetchImages]));
+  // Subscribe to backend update events and refresh images (debounced)
+  const debouncedFetchImages = useMemo(() => debounce(fetchImages, 100), [fetchImages]);
+  useSSE('/api/updates', debouncedFetchImages);
   // Load all dialogs in one request when path changes
   useEffect(() => {
     getImageDialogs(path)
@@ -192,6 +191,16 @@ const AppContent: React.FC = () => {
       setDescMode('text');
     }
   }, [selectedId, dialogMap, path]);
+
+  // Derive preview map for first dialog line per image
+  const dialogPreviewMap = useMemo<Record<string, string>>(() => {
+    const pm: Record<string, string> = {};
+    images.forEach((img) => {
+      const lines = dialogMap[img.id] || [];
+      pm[img.id] = lines.length > 0 ? lines[0] : '';
+    });
+    return pm;
+  }, [dialogMap, images]);
 
   const handleFileDrop = async (files: FileList) => {
     const imageFiles = Array.from(files).filter((f) =>
@@ -258,15 +267,37 @@ const AppContent: React.FC = () => {
         zoomLevel={zoomLevel}
         path={path}
         bustMap={bustMap}
+        dialogPreviewMap={dialogPreviewMap}
+        // Optimistic reorder: update local state immediately
         onReorderComplete={(movedId, prevId, nextId) => {
+          setImages((prevImgs) => {
+            const imgs = [...prevImgs];
+            const oldIndex = imgs.findIndex((img) => img.id === movedId);
+            if (oldIndex === -1) return prevImgs;
+            const [moved] = imgs.splice(oldIndex, 1);
+            let insertAt = 0;
+            if (prevId) {
+              const p = imgs.findIndex((img) => img.id === prevId);
+              insertAt = p + 1;
+            } else if (nextId) {
+              insertAt = imgs.findIndex((img) => img.id === nextId);
+            } else {
+              insertAt = imgs.length;
+            }
+            imgs.splice(insertAt, 0, moved);
+            return imgs;
+          });
           setBustMap((old) => {
             const next = { ...old };
-            // bump moved and neighbors
             next[movedId] = (old[movedId] || 0) + 1;
             if (prevId) next[prevId] = (old[prevId] || 0) + 1;
             if (nextId) next[nextId] = (old[nextId] || 0) + 1;
             return next;
           });
+        }}
+        // On API failure: revert by refetching from server
+        onReorderError={() => {
+          alert('Reorder failed, reverting.');
           fetchImages();
         }}
         onItemClick={toggleLightbox}

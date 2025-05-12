@@ -90,12 +90,12 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
       ref={setNodeRef}
       style={style}
       className="item"
+      {...attributes}
+      {...listeners}
     >
-      {/* Drag handle: separate ordering logic */}
+      {/* Drag handle: visual indicator for reordering (drag anywhere) */}
       <button
         className="drag-handle"
-        {...attributes}
-        {...listeners}
         aria-label="Drag to reorder"
       >≡</button>
       {/* Edit icon for accessibility */}

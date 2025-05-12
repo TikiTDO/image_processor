@@ -13,7 +13,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableItem from '../SortableItem';
-import { ImageMeta, reorderImage, getImageDialogs } from '../../services/api';
+import { ImageMeta, reorderImage } from '../../services/api';
 
 interface ImageGridProps {
   images: ImageMeta[];
@@ -21,13 +21,17 @@ interface ImageGridProps {
   path: string;
   /** Optional cache buster map for image reloads */
   bustMap?: Record<string, number>;
-  /** Callback after reorder: movedId, prevNeighborId, nextNeighborId */
+  /** Callback after a successful reorder operation (optimistic update) */
   onReorderComplete: (movedId: string, prevId: string | null, nextId: string | null) => void;
+  /** Callback when reorder API fails: parent should revert state */
+  onReorderError?: () => void;
   onItemClick: (id: string) => void;
   /** Called when Remove Image is selected */
   onRemoveImage?: (id: string) => void;
   /** Called when Hide Image is selected */
   onHideImage?: (id: string) => void;
+  /** Optional map of first dialog preview per image ID */
+  dialogPreviewMap?: Record<string, string>;
 }
 
 const ImageGrid: React.FC<ImageGridProps> = ({
@@ -39,10 +43,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onItemClick,
   onRemoveImage,
   onHideImage,
+  dialogPreviewMap,
 }) => {
   const isDragging = useRef(false);
-  // Map from image ID to its first dialog line (e.g. "0:Hello"), loaded via bulk API
-  const [dialogMap, setDialogMap] = useState<Record<string, string>>({});
   const sensors = useSensors(
     // Pointer sensor for mouse and pen input, with minimum drag distance
     useSensor(PointerSensor, {
@@ -60,30 +63,21 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     if (active.id !== over.id) {
       const oldIndex = images.findIndex((img) => img.id === active.id);
       const newIndex = images.findIndex((img) => img.id === over.id);
-      const newImages = arrayMove(images, oldIndex, newIndex);
-      // Calculate neighbor IDs
-      const prev = newIndex > 0 ? newImages[newIndex - 1].id : null;
-      const next =
-        newIndex < newImages.length - 1 ? newImages[newIndex + 1].id : null;
-      reorderImage(active.id, prev, next, path).finally(() => {
-        onReorderComplete(active.id as string, prev, next);
+      // Determine neighbor IDs
+      const tempImages = arrayMove(images, oldIndex, newIndex);
+      const prev = newIndex > 0 ? tempImages[newIndex - 1].id : null;
+      const next = newIndex < tempImages.length - 1 ? tempImages[newIndex + 1].id : null;
+      // Optimistic UI update
+      onReorderComplete(active.id as string, prev, next);
+      // Call reorder API, handle errors
+      reorderImage(active.id as string, prev, next, path).catch((err) => {
+        alert(`Failed to reorder image: ${err}`);
+        onReorderError && onReorderError();
       });
     }
   };
 
-  // Fetch dialog previews for all images in one request
-  useEffect(() => {
-    getImageDialogs(path)
-      .then((map) => {
-        const preview: Record<string, string> = {};
-        images.forEach((img) => {
-          const lines = map[img.id] || [];
-          preview[img.id] = lines.length > 0 ? lines[0] : '';
-        });
-        setDialogMap(preview);
-      })
-      .catch((err) => console.error('Error fetching dialog previews:', err));
-  }, [images, path]);
+  // Previews for first dialog line provided by parent (if any)
 
   return (
     <DndContext
@@ -108,13 +102,15 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             // Use hash-based URL; cache invalidation via hash change without extra params
             const key = `${img.id}-${img.timestamp}`;
             const url = img.url;
+            // Determine preview line from provided map
+            const previewLine = dialogPreviewMap?.[img.id] || '';
             return (
               <SortableItem
                 key={key}
                 id={img.id}
                 url={url}
                 size={zoomLevel}
-                dialogLine={dialogMap[img.id]}
+                dialogLine={previewLine}
                 onClick={() => {
                   if (isDragging.current) return;
                   onItemClick(img.id);
