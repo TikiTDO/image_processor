@@ -30,7 +30,8 @@ backend/image-processor-backend
 .pnpm-store
 
 backend/.cache
-backend/images
+backend/images/*
+!backend/images/.keep
 tmpdir
 tmp
 # Local HTTPS certificates
