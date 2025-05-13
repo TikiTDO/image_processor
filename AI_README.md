@@ -7,7 +7,7 @@ This document equips the AI assistant with everything needed to navigate, unders
 
 ## 1. Base Prompt & Goals
 - **Base Prompt**: See `BASE_PROMPT.md` for the foundational system instructions.
-- **Primary Objective**: Enable the AI to propose, draft, and apply precise, minimal changes that adhere to project conventions and pass all tests.
+- **Primary Objective**: Enable the AI to propose, draft, and apply precise, minimal changes that adhere to project conventions, pass all tests, and commit the changes into git.
 - **Current Task**: Revise the backend storage to use a single `metadata/` directory with layered subdirectories. Each leaf directory will contain all per-file data (dialog, timestamps, AI annotations, etc.) and a symlink back to the original image. Symlinks must update when files are moved or renamed.
 
 ---
@@ -128,7 +128,7 @@ STATIC_DIR=../frontend/dist IMAGE_DIR=images go run main.go -mode=prod
 mkdir -p tmpdir
 export TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir
 go test ./...
-``` 
+```
 
 ### Frontend
 ```bash
