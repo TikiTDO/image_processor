@@ -110,14 +110,25 @@ metadata/
 ```bash
 cd backend
 go mod tidy
-# Run server (HTTPS & HTTP/3):
+# Run server (HTTPS & HTTP/3) with default behavior (API only):
 IMAGE_DIR=images go run main.go
-#
+
+# Development mode: proxy all HTTP and WebSocket requests to the frontend dev server
+# (default https://localhost:5800, override with DEV_SERVER_URL)
+DEV_SERVER_URL=https://localhost:5800 IMAGE_DIR=images go run main.go -mode=dev
+
+# Production mode: serve pre-built static frontend assets (default dir frontend/dist,
+# override with STATIC_DIR)
+STATIC_DIR=../frontend/dist IMAGE_DIR=images go run main.go -mode=prod
+
+# Build frontend static assets for production
+../scripts/build-static.sh
+
 # Tests (if temp-dir issues):
 mkdir -p tmpdir
 export TMPDIR=$(pwd)/tmpdir GOTMPDIR=$(pwd)/tmpdir
 go test ./...
-```
+``` 
 
 ### Frontend
 ```bash

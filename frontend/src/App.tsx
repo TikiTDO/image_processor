@@ -7,6 +7,7 @@ import ZoomControls from './components/ZoomControls';
 import ImageGrid from './components/ImageGrid';
 import SpeakerConfigModal from './components/SpeakerConfigModal';
 import ErrorOverlay from './components/ErrorOverlay';
+import ScrollToTop from './components/ScrollToTop';
 import {
   getImages,
   uploadImages,
@@ -513,6 +514,7 @@ const App: React.FC = () => {
   return (
     <SpeakerProvider>
       <AppContent />
+      <ScrollToTop />
     </SpeakerProvider>
   );
 };

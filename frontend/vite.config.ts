@@ -7,6 +7,8 @@ import path from 'path';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5700';
 
 export default defineConfig({
+  // Serve and build assets under the /app/ base path
+  base: '/app/',
   server: {
     port: 5800,
     // Enable HTTPS using backend self-signed certificates

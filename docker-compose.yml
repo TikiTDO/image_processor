@@ -16,6 +16,8 @@ services:
       - IMAGE_DIR=/app/images
       - GOCACHE=/app/.cache/go-build
       - SERVER_HOST=0.0.0.0
+      - MODE=dev
+      - DEV_SERVER_URL=https://frontend:5800
     command:
       - sh
       - -c

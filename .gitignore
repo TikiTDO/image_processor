@@ -2,6 +2,8 @@
 /backend/*.exe
 /backend/*.out
 /backend/main
+backend/backend_binary
+backend/backend_test_binary
 
 # Test binaries
 *.test
