@@ -27,12 +27,15 @@ const SpeakerConfigModal: React.FC<SpeakerConfigModalProps> = ({ onClose }) => {
                   onChange={(e) => updateName(id, e.target.value)}
                   style={{ flex: 1, marginRight: '0.5rem' }}
                 />
-                <input
-                  type="color"
-                  value={colors[id] || '#000000'}
-                  onChange={(e) => updateColor(id, e.target.value)}
-                  style={{ marginRight: '0.5rem' }}
-                />
+                {/* Color picker disabled for narrator (id 0) */}
+                {id !== 0 && (
+                  <input
+                    type="color"
+                    value={colors[id] || '#000000'}
+                    onChange={(e) => updateColor(id, e.target.value)}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                )}
                 {id !== 0 && (
                   <button onClick={() => removeSpeaker(id)}>Remove</button>
                 )}

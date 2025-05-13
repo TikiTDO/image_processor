@@ -71,6 +71,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       onReorderComplete(active.id as string, prev, next);
       // Call reorder API, handle errors
       reorderImage(active.id as string, prev, next, path).catch((err) => {
+        console.error('Error reordering image:', err);
         alert(`Failed to reorder image: ${err}`);
         onReorderError && onReorderError();
       });

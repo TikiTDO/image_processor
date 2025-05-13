@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
 import { SpeakerProvider, useSpeakerContext } from './context/SpeakerContext';
@@ -8,13 +9,10 @@ import ImageGrid from './components/ImageGrid';
 import SpeakerConfigModal from './components/SpeakerConfigModal';
 import ErrorOverlay from './components/ErrorOverlay';
 import ScrollToTop from './components/ScrollToTop';
+import HeaderControls from './components/HeaderControls';
 import {
-  getImages,
   uploadImages,
   setImageDialog,
-  getImageDescription,
-  getImageDialogs,
-  ImageMeta,
   getDefaultPath,
 } from './services/api';
 
@@ -28,7 +26,6 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
 }
 
 const AppContent: React.FC = () => {
-  const [images, setImages] = useState<ImageMeta[]>([]);
   // Zoom level persisted in sessionStorage, seeded from localStorage
   const STORAGE_ZOOM_KEY = 'zoomLevel';
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
@@ -54,6 +51,7 @@ const AppContent: React.FC = () => {
     if (local !== null) return local;
     return '';
   });
+  const { images, dialogs: dialogMap, refresh, setImages } = useImages(path);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDialog, setSelectedDialog] = useState<string[]>([]);
   const [rawDescription, setRawDescription] = useState<string>('');
@@ -61,8 +59,6 @@ const AppContent: React.FC = () => {
   const [showSpeakerConfig, setShowSpeakerConfig] = useState(false);
   // Global edit mode: when true, all dialog panels are editable
   const [editMode, setEditMode] = useState<boolean>(false);
-  // Cache of dialogs for all images: id -> dialog lines
-  const [dialogMap, setDialogMap] = useState<Record<string, string[]>>({});
   // Hidden images state
   const [hiddenIDs, setHiddenIDs] = useState<string[]>([]);
   const [showHiddenModal, setShowHiddenModal] = useState(false);
@@ -110,15 +106,6 @@ const AppContent: React.FC = () => {
     [selectedId, path]
   );
 
-  const fetchImages = useCallback(() => {
-    getImages(path)
-      .then(setImages)
-      .catch((err) => console.error('Error fetching images:', err));
-  }, [path]);
-
-  useEffect(() => {
-    fetchImages();
-  }, [path]);
   // On mount, if no persisted path, fetch server default path
   useEffect(() => {
     if (path === '') {
@@ -127,15 +114,8 @@ const AppContent: React.FC = () => {
         .catch((err) => console.error('Error fetching default path:', err));
     }
   }, []);
-  // Subscribe to backend update events and refresh images (debounced)
-  const debouncedFetchImages = useMemo(() => debounce(fetchImages, 100), [fetchImages]);
-  useSSE('/api/updates', debouncedFetchImages);
-  // Load all dialogs in one request when path changes
-  useEffect(() => {
-    getImageDialogs(path)
-      .then((map) => setDialogMap(map))
-      .catch((err) => console.error('Error fetching dialogs:', err));
-  }, [path]);
+  // For new updates, refresh images
+  useSSE('/api/updates', refresh);
   // Persist path to sessionStorage and localStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem(STORAGE_PATH_KEY, path);
@@ -156,7 +136,7 @@ const AppContent: React.FC = () => {
     } catch (err) {
       console.error('Error deleting image:', err);
     }
-    fetchImages();
+    refresh();
   };
   const hideImage = (id: string) => {
     setHiddenIDs((prev) => [...prev, id]);
@@ -218,7 +198,7 @@ const AppContent: React.FC = () => {
     );
     if (!imageFiles.length) return;
     await uploadImages(path, imageFiles);
-    fetchImages();
+    refresh();
   };
 
   useEffect(() => {
@@ -237,41 +217,21 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="app-container">
-      <div className="controls">
-        <ZoomControls
-          zoomLevel={zoomLevel}
-          zoomPresets={zoomPresets}
-          onZoomChange={setZoomLevel}
-        />
-        <PathPicker path={path} onChange={setPath} />
-        {/* Speaker configuration button: shows speaker names in their colors */}
-        <button
-          className="speaker-config-btn"
-          onClick={() => setShowSpeakerConfig(true)}
-        >
-          {Object.entries(speakerNames).map(([key, name]) => (
-            <span
-              key={key}
-              style={{ color: speakerColors[Number(key)] || '#000', margin: '0 0.5rem' }}
-            >
-              {name}
-            </span>
-          ))}
-        </button>
-        {/* Toggle global edit mode */}
-        <button
-          className="edit-mode-btn"
-          onClick={() => setEditMode((v) => !v)}
-        >
-          {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
-        </button>
-        <button
-          className="edit-mode-btn"
-          onClick={() => setShowHiddenModal(true)}
-        >
-          Hidden Images ({hiddenIDs.length})
-        </button>
-      </div>
+      <HeaderControls
+        zoomLevel={zoomLevel}
+        zoomPresets={zoomPresets}
+        onZoomChange={setZoomLevel}
+        path={path}
+        onPathChange={setPath}
+        speakerNames={speakerNames}
+        speakerColors={speakerColors}
+        onShowSpeakerConfig={() => setShowSpeakerConfig(true)}
+        editMode={editMode}
+        onToggleEditMode={() => setEditMode((v) => !v)}
+        hiddenCount={hiddenIDs.length}
+        onShowHidden={() => setShowHiddenModal(true)}
+        imageCount={images.length}
+      />
       <ImageGrid
         images={visibleImages}
         zoomLevel={zoomLevel}
@@ -308,7 +268,7 @@ const AppContent: React.FC = () => {
         // On API failure: revert by refetching from server
         onReorderError={() => {
           alert('Reorder failed, reverting.');
-          fetchImages();
+          refresh();
         }}
         onItemClick={toggleLightbox}
         onRemoveImage={removeImage}

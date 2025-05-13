@@ -547,6 +547,47 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* Image count button styling */
+.image-count-btn {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-left: 8px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.image-count-btn:hover {
+  background: #e0e0e0;
+}
+@media (prefers-color-scheme: dark) {
+  /* Header buttons dark mode */
+  .speaker-config-btn,
+  .edit-mode-btn,
+  .image-count-btn {
+    background: #333;
+    color: #eee;
+  }
+  .speaker-config-btn:hover,
+  .edit-mode-btn:hover,
+  .image-count-btn:hover {
+    background: #444;
+  }
+  /* Narrator name styling */
+  .narrator-name {
+    color: #aaa !important;
+  }
+  .image-count-btn {
+    background: #444;
+  }
+}
+
+/* Narrator name styling in light mode */
+.narrator-name {
+  color: #666;
+}
+
 /* Lightbox overlay for enlarged image */
 .lightbox {
   position: fixed;
