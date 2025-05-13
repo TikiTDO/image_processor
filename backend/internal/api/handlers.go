@@ -388,6 +388,88 @@ func handleGetDirs(c *gin.Context) {
    c.JSON(http.StatusOK, entries)
 }
 
+// handleReinit reinitializes file names in the given directory by distributing first numbers evenly and randomizing second numbers.
+func handleReinit(c *gin.Context) {
+   sub := c.Query("path")
+   baseDir := ImageDir
+   if sub != "" {
+       baseDir = filepath.Join(ImageDir, sub)
+   }
+   // Ensure metadata storage is migrated
+   if err := storage.MigrateMetadata(baseDir); err != nil {
+       log.Printf("Error migrating metadata for %s: %v", baseDir, err)
+   }
+   // Get current images sorted by timestamp
+   images := getImages(sub)
+   type fileEntry struct { name string; ts time.Time }
+   var entries []fileEntry
+   for _, im := range images {
+       filename, err := findFilenameByHash(baseDir, im.ID)
+       if err != nil || filename == "" {
+           continue
+       }
+       t, err := time.Parse(time.RFC3339Nano, im.Timestamp)
+       if err != nil {
+           continue
+       }
+       entries = append(entries, fileEntry{name: filename, ts: t})
+   }
+   count := len(entries)
+   if count == 0 {
+       c.JSON(http.StatusOK, gin.H{"renamed": 0})
+       return
+   }
+   // Determine min and max seconds
+   minSec := entries[0].ts.Unix()
+   maxSec := entries[count-1].ts.Unix()
+   secRange := maxSec - minSec
+   for idx, e := range entries {
+       // Calculate new seconds
+       var newSec int64
+       if count > 1 {
+           newSec = minSec + (secRange*int64(idx))/(int64(count)-1)
+       } else {
+           newSec = minSec
+       }
+       // Randomize fractional nanoseconds
+       randNano := rand.Int63n(1e9)
+       newTime := time.Unix(newSec, randNano)
+       prefix := newTime.Format("20060102150405")
+       suffix := fmt.Sprintf("%09d", newTime.Nanosecond())
+       oldName := e.name
+       ext := filepath.Ext(oldName)
+       newName := prefix + "-" + suffix + ext
+       oldPath := filepath.Join(baseDir, oldName)
+       newPath := filepath.Join(baseDir, newName)
+       // Ensure unique filename
+       for {
+           if _, err := os.Stat(newPath); os.IsNotExist(err) {
+               break
+           }
+           randNano = rand.Int63n(1e9)
+           suffix = fmt.Sprintf("%09d", randNano)
+           newName = prefix + "-" + suffix + ext
+           newPath = filepath.Join(baseDir, newName)
+       }
+       // Rename file if needed
+       if oldName != newName {
+           if err := os.Rename(oldPath, newPath); err != nil {
+               log.Printf("Error renaming file %s to %s: %v", oldName, newName, err)
+               continue
+           }
+       }
+       // Update metadata entry
+       if err := storage.DeleteMetaEntry(baseDir, oldName); err != nil {
+           log.Printf("Error deleting metadata for %s: %v", oldName, err)
+       }
+       tsStr := newTime.Format(time.RFC3339Nano)
+       if err := storage.SaveMetaEntry(baseDir, newName, tsStr); err != nil {
+           log.Printf("Error saving metadata for %s: %v", newName, err)
+       }
+   }
+   c.JSON(http.StatusOK, gin.H{"renamed": count})
+}
+
 // handleReorder processes an image reorder request.
 func handleReorder(c *gin.Context) {
    var req ReorderRequest
@@ -438,18 +520,7 @@ func handleReorder(c *gin.Context) {
            haveNext = true
        }
    }
-   // Compute new timestamp based on neighbors
-   var newT time.Time
-   if havePrev && haveNext {
-       diff := nextT.Sub(prevT)
-       newT = prevT.Add(diff / 2)
-   } else if havePrev {
-       newT = prevT.Add(time.Second)
-   } else if haveNext {
-       newT = nextT.Add(-time.Second)
-   } else {
-       newT = time.Now()
-   }
+   // Initialize base directory
    baseDir := ImageDir
    if sub != "" {
        baseDir = filepath.Join(ImageDir, sub)
@@ -464,86 +535,169 @@ func handleReorder(c *gin.Context) {
        c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load metadata"})
        return
    }
-   // Group rename logic
-   prefix := newT.Format("20060102150405")
-   var groupNames []string
-   files, err := ioutil.ReadDir(baseDir)
-   if err == nil {
-       for _, fi := range files {
-           if fi.IsDir() {
-               continue
-           }
-           name := fi.Name()
-           if strings.HasPrefix(name, prefix+"-") {
-               groupNames = append(groupNames, name)
-           }
-       }
-   }
-   if !contains(groupNames, id) {
-       groupNames = append(groupNames, id)
-   }
-   type gf struct { name, ext string; ts time.Time }
-   var groupFiles []gf
-   prefixTime := newT.Truncate(time.Second)
-   for _, name := range groupNames {
-       ext := filepath.Ext(name)
-       tsVal := prefixTime
-       if name == id {
-           tsVal = newT
-       } else {
-           // Attempt to load hashed metadata entry
-           raw, err := storage.LoadMetaEntry(baseDir, name)
-           if err == nil && raw != "" {
-               if t2, err2 := time.Parse(time.RFC3339Nano, raw); err2 == nil {
-                   tsVal = t2
-               }
-           }
-       }
-       groupFiles = append(groupFiles, gf{name: name, ext: ext, ts: tsVal})
-   }
-   sort.Slice(groupFiles, func(i, j int) bool { return groupFiles[i].ts.Before(groupFiles[j].ts) })
-   total := len(groupFiles)
-   movedNewName := ""
+   // Prepare for potential renames
+   var movedNewName string
    var movedTS time.Time
-   for idx, g := range groupFiles {
-       frac := int64(idx+1) * int64(time.Second) / int64(total+1)
-       suffix := fmt.Sprintf("%09d", frac)
-       newName := prefix + "-" + suffix + g.ext
-       oldPath := filepath.Join(baseDir, g.name)
-       newPath := filepath.Join(baseDir, newName)
-       if g.name != newName {
-           if _, err := os.Stat(newPath); err == nil {
-               randSuffix := rand.Int63n(1e9)
-               suffix = fmt.Sprintf("%09d", randSuffix)
-               newName = prefix + "-" + suffix + g.ext
-               newPath = filepath.Join(baseDir, newName)
+   // Renaming logic: tiered prefix & suffix spacing
+   {
+       oldName := id
+       ext := filepath.Ext(oldName)
+       // Tier1: if moving between two images with a second gap >1, evenly space first numbers
+       if havePrev && haveNext {
+           prevSec := prevT.Truncate(time.Second).Unix()
+           nextSec := nextT.Truncate(time.Second).Unix()
+           if delta := nextSec - prevSec; delta > 1 {
+               newSec := prevSec + delta/2
+               prefixTime := time.Unix(newSec, 0)
+               prefixStr := prefixTime.Format("20060102150405")
+               // Random suffix for ordering
+               suffixNum := rand.Int63n(1e9)
+               suffixStr := fmt.Sprintf("%09d", suffixNum)
+               newName := prefixStr + "-" + suffixStr + ext
+               oldPath := filepath.Join(baseDir, oldName)
+               newPath := filepath.Join(baseDir, newName)
+               for {
+                   if _, err := os.Stat(newPath); os.IsNotExist(err) {
+                       break
+                   }
+                   suffixNum = rand.Int63n(1e9)
+                   suffixStr = fmt.Sprintf("%09d", suffixNum)
+                   newName = prefixStr + "-" + suffixStr + ext
+                   newPath = filepath.Join(baseDir, newName)
+               }
+               if err := os.Rename(oldPath, newPath); err != nil {
+                   log.Printf("Error renaming file %s to %s: %v", oldName, newName, err)
+               } else {
+                   _ = storage.MoveDialogEntry(baseDir, oldName, newName)
+               }
+               _ = storage.DeleteMetaEntry(baseDir, oldName)
+               movedTS = time.Unix(newSec, suffixNum)
+               tsStr := movedTS.Format(time.RFC3339Nano)
+               if err := storage.SaveMetaEntry(baseDir, newName, tsStr); err != nil {
+                   log.Printf("Error saving metadata for %s: %v", newName, err)
+               }
+               newID, _ := storage.HashFile(filepath.Join(baseDir, newName))
+               c.JSON(http.StatusOK, ReorderResponse{ID: newID, Timestamp: tsStr})
+               return
            }
-           if err := os.Rename(oldPath, newPath); err != nil {
-               log.Printf("Error renaming file %s to %s: %v", g.name, newName, err)
-           } else {
-               // Move any dialog for the old ID to the new ID
-               if err2 := storage.MoveDialogEntry(baseDir, g.name, newName); err2 != nil {
-                   log.Printf("Error moving dialog for %s to %s: %v", g.name, newName, err2)
+           // Tier2: if first numbers collide, evenly space second numbers
+           if prevT.Truncate(time.Second).Equal(nextT.Truncate(time.Second)) {
+                   prevNano := int64(prevT.Nanosecond())
+                   nextNano := int64(nextT.Nanosecond())
+               if delta := nextNano - prevNano; delta > 1 {
+                   newNano := prevNano + delta/2
+                   prefixTime := prevT.Truncate(time.Second)
+                   prefixStr := prefixTime.Format("20060102150405")
+                   suffixStr := fmt.Sprintf("%09d", newNano)
+                   newName := prefixStr + "-" + suffixStr + ext
+                   oldPath := filepath.Join(baseDir, oldName)
+                   newPath := filepath.Join(baseDir, newName)
+                   for {
+                       if _, err := os.Stat(newPath); os.IsNotExist(err) {
+                           break
+                       }
+                       newNano = rand.Int63n(1e9)
+                       suffixStr = fmt.Sprintf("%09d", newNano)
+                       newName = prefixStr + "-" + suffixStr + ext
+                       newPath = filepath.Join(baseDir, newName)
+                   }
+                   if err := os.Rename(oldPath, newPath); err != nil {
+                       log.Printf("Error renaming file %s to %s: %v", oldName, newName, err)
+                   } else {
+                       _ = storage.MoveDialogEntry(baseDir, oldName, newName)
+                   }
+                   _ = storage.DeleteMetaEntry(baseDir, oldName)
+                   movedTS = time.Unix(prefixTime.Unix(), newNano)
+                   tsStr := movedTS.Format(time.RFC3339Nano)
+                   if err := storage.SaveMetaEntry(baseDir, newName, tsStr); err != nil {
+                       log.Printf("Error saving metadata for %s: %v", newName, err)
+                   }
+                   newID, _ := storage.HashFile(filepath.Join(baseDir, newName))
+                   c.JSON(http.StatusOK, ReorderResponse{ID: newID, Timestamp: tsStr})
+                   return
                }
            }
        }
-       // Remove the old metadata entry
-       if err := storage.DeleteMetaEntry(baseDir, g.name); err != nil {
-           log.Printf("Error deleting metadata for %s: %v", g.name, err)
-       }
-       // Determine new timestamp for this file
-       var tsStr string
-       if g.name == id {
-           tsStr = newT.Format(time.RFC3339Nano)
-           movedNewName = newName
-           movedTS = newT
+       // Tier3: fallback, rename all files sharing the same first number prefix
+       // Determine the group prefix (use prev if available, else next, else old)
+       var groupPrefixSec int64
+       if havePrev {
+           groupPrefixSec = prevT.Truncate(time.Second).Unix()
+       } else if haveNext {
+           groupPrefixSec = nextT.Truncate(time.Second).Unix()
        } else {
-           tsStr = prefixTime.Add(time.Duration(frac)).Format(time.RFC3339Nano)
+           if tOld, err := time.Parse(time.RFC3339Nano, rawOldTS); err == nil {
+               groupPrefixSec = tOld.Truncate(time.Second).Unix()
+           } else {
+               groupPrefixSec = time.Now().Truncate(time.Second).Unix()
+           }
        }
-       // Save new metadata entry
-       if err := storage.SaveMetaEntry(baseDir, newName, tsStr); err != nil {
-           log.Printf("Error saving metadata for %s: %v", newName, err)
+       prefixTime := time.Unix(groupPrefixSec, 0)
+       prefixStr := prefixTime.Format("20060102150405")
+       // Collect files in this prefix group
+       var group []string
+       if files, err := ioutil.ReadDir(baseDir); err == nil {
+           for _, fi := range files {
+               if fi.IsDir() {
+                   continue
+               }
+               name := fi.Name()
+               if strings.HasPrefix(name, prefixStr+"-") {
+                   group = append(group, name)
+               }
+           }
        }
+       // Ensure moved file is included
+       if !contains(group, oldName) {
+           group = append(group, oldName)
+       }
+       // Sort by existing timestamp
+       sort.Slice(group, func(i, j int) bool {
+           ti, _ := storage.LoadMetaEntry(baseDir, group[i])
+           tj, _ := storage.LoadMetaEntry(baseDir, group[j])
+           t1, _ := time.Parse(time.RFC3339Nano, ti)
+           t2, _ := time.Parse(time.RFC3339Nano, tj)
+           return t1.Before(t2)
+       })
+       total := len(group)
+       var movedName string
+       for idx, name := range group {
+           ext := filepath.Ext(name)
+           // Evenly space first 3 digits of suffix
+           pos := (idx + 1) * 999 / (total + 1)
+           prefixDigits := fmt.Sprintf("%03d", pos)
+           randTail := rand.Int63n(1e6)
+           tailDigits := fmt.Sprintf("%06d", randTail)
+           newName := prefixStr + "-" + prefixDigits + tailDigits + ext
+           oldPath := filepath.Join(baseDir, name)
+           newPath := filepath.Join(baseDir, newName)
+           if name != newName {
+               if _, err := os.Stat(newPath); err == nil {
+                   // ensure uniqueness
+                   randTail = rand.Int63n(1e6)
+                   tailDigits = fmt.Sprintf("%06d", randTail)
+                   newName = prefixStr + "-" + prefixDigits + tailDigits + ext
+                   newPath = filepath.Join(baseDir, newName)
+               }
+               if err := os.Rename(oldPath, newPath); err != nil {
+                   log.Printf("Error renaming file %s to %s: %v", name, newName, err)
+               } else {
+                   _ = storage.MoveDialogEntry(baseDir, name, newName)
+               }
+           }
+           _ = storage.DeleteMetaEntry(baseDir, name)
+           // Save new metadata with full nanosecond timestamp
+           ts := time.Unix(groupPrefixSec, int64(pos)*1e6+randTail)
+           tsStr := ts.Format(time.RFC3339Nano)
+           if err := storage.SaveMetaEntry(baseDir, newName, tsStr); err != nil {
+               log.Printf("Error saving metadata for %s: %v", newName, err)
+           }
+           if name == oldName {
+               movedName = newName
+               movedTS = ts
+           }
+       }
+       movedNewName = movedName
    }
    // Update any other entries sharing the old timestamp
    movedTSStr := movedTS.Format(time.RFC3339Nano)

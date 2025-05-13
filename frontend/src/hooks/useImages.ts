@@ -22,11 +22,14 @@ export function useImages(path: string) {
   useSSE('/api/updates', fetchImages);
 
   // Fetch all dialogs for images in this path
-  useEffect(() => {
+  const fetchDialogs = useCallback(() => {
     getImageDialogs(path)
       .then(setDialogs)
       .catch((err) => console.error('Error fetching dialogs:', err));
   }, [path]);
+  useEffect(() => {
+    fetchDialogs();
+  }, [fetchDialogs]);
 
-  return { images, dialogs, refresh: fetchImages, setImages };
+  return { images, dialogs, refresh: fetchImages, refreshDialogs: fetchDialogs, setImages };
 }

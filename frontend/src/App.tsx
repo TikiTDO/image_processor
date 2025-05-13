@@ -10,6 +10,7 @@ import SpeakerConfigModal from './components/SpeakerConfigModal';
 import ErrorOverlay from './components/ErrorOverlay';
 import ScrollToTop from './components/ScrollToTop';
 import HeaderControls from './components/HeaderControls';
+import DirectoryManagementModal from './components/DirectoryManagementModal';
 import {
   uploadImages,
   setImageDialog,
@@ -51,7 +52,23 @@ const AppContent: React.FC = () => {
     if (local !== null) return local;
     return '';
   });
-  const { images, dialogs: dialogMap, refresh, setImages } = useImages(path);
+  const { images, dialogs: dialogMap, refresh, refreshDialogs, setImages } = useImages(path);
+  // Theme: 'system' uses prefers-color-scheme; 'light'/'dark' force theme
+  const [theme, setTheme] = useState<'system'|'light'|'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
+  });
+  // Apply theme class to <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('theme-light', 'theme-dark');
+    if (theme === 'light') root.classList.add('theme-light');
+    else if (theme === 'dark') root.classList.add('theme-dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  const cycleTheme = () => {
+    setTheme((prev) => (prev === 'system' ? 'dark' : prev === 'dark' ? 'light' : 'system'));
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDialog, setSelectedDialog] = useState<string[]>([]);
   const [rawDescription, setRawDescription] = useState<string>('');
@@ -62,6 +79,21 @@ const AppContent: React.FC = () => {
   // Hidden images state
   const [hiddenIDs, setHiddenIDs] = useState<string[]>([]);
   const [showHiddenModal, setShowHiddenModal] = useState(false);
+  // Directory management modal state
+  const [showDirManagement, setShowDirManagement] = useState(false);
+  // Handler to reinitialize filenames in directory
+  const handleReinitDirectory = async () => {
+    try {
+      const res = await fetch(`/api/dirs/reinit?path=${encodeURIComponent(path)}`, { method: 'POST' });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Directory reinit failed: ${res.status} ${txt}`);
+      }
+      refresh();
+    } catch (err: any) {
+      alert(err.message || 'Directory reinit failed');
+    }
+  };
   // Compute visible images (filter out hidden)
   const visibleImages = images.filter((img) => !hiddenIDs.includes(img.id));
   const { colors: speakerColors, names: speakerNames } = useSpeakerContext();
@@ -80,6 +112,11 @@ const AppContent: React.FC = () => {
   // Keyboard navigation for lightbox
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // When focus is inside an input or textarea (edit mode), allow arrow keys to navigate within field
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
       if (!selectedId) return;
       if (e.key === 'Escape') {
         closeLightbox();
@@ -148,6 +185,14 @@ const AppContent: React.FC = () => {
 
   const closeLightbox = () => {
     if (suppressClicks.current) return;
+    // On closing, save any dialog edits in edit mode
+    if (editMode && selectedId && descMode === 'dialog') {
+      setImageDialog(selectedId, selectedDialog, path)
+        .then(() => refreshDialogs())
+        .catch((err) => {
+          console.error('Error saving dialog on close:', err);
+        });
+    }
     setSelectedId(null);
     suppressClicks.current = true;
     setTimeout(() => {
@@ -231,6 +276,9 @@ const AppContent: React.FC = () => {
         hiddenCount={hiddenIDs.length}
         onShowHidden={() => setShowHiddenModal(true)}
         imageCount={images.length}
+        onShowDirManagement={() => setShowDirManagement(true)}
+        theme={theme}
+        onToggleTheme={cycleTheme}
       />
       <ImageGrid
         images={visibleImages}
@@ -453,6 +501,13 @@ const AppContent: React.FC = () => {
             <button onClick={() => setShowHiddenModal(false)}>Close</button>
           </div>
         </div>
+      )}
+      {showDirManagement && (
+        <DirectoryManagementModal
+          path={path}
+          onReinit={handleReinitDirectory}
+          onClose={() => setShowDirManagement(false)}
+        />
       )}
     </div>
   );

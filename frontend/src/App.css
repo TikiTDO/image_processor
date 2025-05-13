@@ -1,3 +1,15 @@
+/* Theme override: dark mode inversion hack */
+html.theme-dark {
+  filter: invert(1) hue-rotate(180deg);
+}
+html.theme-dark img,
+html.theme-dark video,
+html.theme-dark canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+html.theme-light {
+  filter: none;
+}
 .zoom-number-btn:hover {
   background: #e0e0e0;
 }
@@ -557,6 +569,14 @@ body {
   font-size: 0.9em;
   cursor: pointer;
   transition: background 0.2s;
+}
+/* Theme toggle button */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  margin-left: auto; /* align to far right */
 }
 .image-count-btn:hover {
   background: #e0e0e0;

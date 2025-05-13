@@ -17,6 +17,12 @@ export interface HeaderControlsProps {
   onShowHidden: () => void;
   /** Total number of images in current directory */
   imageCount: number;
+  /** Show directory management modal */
+  onShowDirManagement: () => void;
+  /** Current theme: 'system', 'light', 'dark' */
+  theme: 'system' | 'light' | 'dark';
+  /** Toggle theme between system, dark, light */
+  onToggleTheme: () => void;
 }
 
 const HeaderControls: React.FC<HeaderControlsProps> = ({
@@ -33,6 +39,9 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
   hiddenCount,
   onShowHidden,
   imageCount,
+  onShowDirManagement,
+  theme,
+  onToggleTheme,
 }) => (
   <div className="controls">
     <ZoomControls
@@ -64,6 +73,12 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
     </button>
     <button className="image-count-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
       {imageCount} Images
+    </button>
+    <button className="image-count-btn" onClick={onShowDirManagement}>
+      Manage Directory
+    </button>
+    <button className="theme-toggle-btn" onClick={onToggleTheme} title={`Theme: ${theme}`}>
+      {theme === 'system' ? '🖥️' : theme === 'light' ? '☀️' : '🌙'}
     </button>
   </div>
 );

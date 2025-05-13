@@ -44,6 +44,9 @@ func SetupRouter() *gin.Engine {
    // Serve image bytes by hash ID
    r.GET("/api/images/:id", handleGetImage)
    r.GET("/api/dirs", handleGetDirs)
+  
+   // Directory management: reinitialize filenames evenly
+   r.POST("/api/dirs/reinit", handleReinit)
    r.POST("/api/images/:id/reorder", handleReorder)
   
    // Delete image endpoint
