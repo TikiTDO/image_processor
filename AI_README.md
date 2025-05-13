@@ -9,6 +9,14 @@ This document equips the AI assistant with everything needed to navigate, unders
 - **Base Prompt**: See `BASE_PROMPT.md` for the foundational system instructions.
 - **Primary Objective**: Enable the AI to propose, draft, and apply precise, minimal changes that adhere to project conventions, pass all tests, and commit the changes into git.
 - **Current Task**: Revise the backend storage to use a single `metadata/` directory with layered subdirectories. Each leaf directory will contain all per-file data (dialog, timestamps, AI annotations, etc.) and a symlink back to the original image. Symlinks must update when files are moved or renamed.
+  
+### Recent Refactors
+- backend: centralized configuration in `main.go` via a `Config` struct and `loadConfig` helper
+- backend: embedded static frontend build into Go binary using `embed.FS`, updated dev/prod routing
+- frontend: introduced `useImages` hook for image list, dialogs cache, and SSE-driven refresh
+- frontend: extracted header UI into a `HeaderControls` component with sticky layout
+- frontend: added Scroll-to-Top button, dark-mode styling for header buttons, and narrator name default styling
+- frontend: refactored `ImageGrid` reorder to use hook-driven refresh and preserved console error logging
 
 ---
 
@@ -178,7 +186,10 @@ docker-compose up --exit-code-from e2e frontend e2e  # run E2E
 2. **Symlink Management**: on file uploads, renames, and reorder operations, create/update a symlink named `image` in each leaf metadata folder pointing to the actual image.
 3. **Migration Tooling**: write a one-time migration to ingest existing `dialogs/` and timestamp entries into the new layout.
 4. **Extend Storage Model**: add `annotations.json` to accommodate future AI-generated metadata.
-5. **UI Refinements**: separate ordering handles from content, improve toolbar flexibility and theme awareness, and ensure dialog toggles remain legible in all color schemes.
+5. **Componentize UI**: extract Lightbox (`<Lightbox>`) and dialog sidebar (`<DialogSidebar>`) into reusable components and hooks.
+6. **Styling System**: migrate to CSS Modules or styled-components for component-scoped styles and maintainable theming.
+7. **Typed API Client**: evaluate using a generated TypeScript client or a data-fetching library (e.g., React Query) for robust, type-safe API interactions.
+8. **Build Orchestration**: introduce a Makefile or npm script to automate `scripts/build-static.sh` prior to Go builds and unify the build pipeline.
 
 ---
 *End of AI Assistant Guide*
