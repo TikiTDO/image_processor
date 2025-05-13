@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"embed"
-	"flag"
 	"io/fs"
 	"log"
 	"math/rand"
@@ -35,26 +34,64 @@ func SetupRouter() *gin.Engine {
 }
 
 // Type aliases re-exported for tests.
+// Type aliases re-exported for tests.
 type ImageResponse = api.ImageResponse
 type ReorderRequest = api.ReorderRequest
 type ReorderResponse = api.ReorderResponse
 
+// Config holds server configuration loaded from environment.
+type Config struct {
+   Mode         string // dev or prod
+   DevServerURL string // when in dev mode
+   ImageDir     string
+   ServerHost   string
+   ServerPort   string
+}
+
+// loadConfig reads configuration from environment variables with sensible defaults.
+func loadConfig() Config {
+   cfg := Config{}
+   // Server mode
+   if m := os.Getenv("MODE"); m != "" {
+       cfg.Mode = m
+   } else {
+       cfg.Mode = "prod"
+   }
+   // Dev server URL
+   if dev := os.Getenv("DEV_SERVER_URL"); dev != "" {
+       cfg.DevServerURL = dev
+   } else {
+       cfg.DevServerURL = "https://localhost:5800"
+   }
+   // Image directory
+   if img := os.Getenv("IMAGE_DIR"); img != "" {
+       cfg.ImageDir = img
+   } else {
+       cfg.ImageDir = "images"
+   }
+   // Host for HTTP server
+   if h := os.Getenv("SERVER_HOST"); h != "" {
+       cfg.ServerHost = h
+   } else {
+       cfg.ServerHost = "127.0.0.1"
+   }
+   // Port for HTTP server
+   if p := os.Getenv("SERVER_PORT"); p != "" {
+       cfg.ServerPort = p
+   } else {
+       cfg.ServerPort = "5700"
+   }
+   return cfg
+}
+
 func main() {
-	// Parse server mode: dev for proxying to frontend dev server, prod for serving static files
-	var mode string
-	flag.StringVar(&mode, "mode", "", "server mode: dev or prod (default: prod)")
-	flag.Parse()
-	if mode == "" {
-		mode = os.Getenv("MODE")
-	}
-	if mode == "" {
-		mode = "prod"
-	}
+	// configure logging and randomness
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.LUTC)
 	rand.Seed(time.Now().UnixNano())
-	imageDir := os.Getenv("IMAGE_DIR")
-	if imageDir == "" {
-		imageDir = "images"
-	}
+	// load server configuration from flags and environment
+	cfg := loadConfig()
+	mode := cfg.Mode
+	imageDir := cfg.ImageDir
 	if err := os.MkdirAll(imageDir, 0755); err != nil {
 		log.Fatalf("Could not create image dir: %v", err)
 	}
@@ -66,10 +103,8 @@ func main() {
 
 	// Frontend: in dev, reverse-proxy to Vite; in prod, serve embedded SPA
 	if mode == "dev" {
-		devURL := os.Getenv("DEV_SERVER_URL")
-		if devURL == "" {
-			devURL = "https://localhost:5800"
-		}
+		// dev proxy to frontend
+		devURL := cfg.DevServerURL
 		target, err := url.Parse(devURL)
 		if err != nil {
 			log.Fatalf("Invalid DEV_SERVER_URL %q: %v", devURL, err)
@@ -105,16 +140,8 @@ func main() {
 			c.FileFromFS("index.html", fileSystem)
 		})
 	}
-	// Determine host and port for the HTTP server
-	host := os.Getenv("SERVER_HOST")
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = "5700"
-	}
-	addr := host + ":" + port
+	// determine host:port from config
+	addr := cfg.ServerHost + ":" + cfg.ServerPort
 	log.Printf("Server running on %s (HTTPS & HTTP/3)", addr)
 	// Paths to TLS certificate and key
 	certFile := filepath.Join(".", "certs", "cert.pem")
