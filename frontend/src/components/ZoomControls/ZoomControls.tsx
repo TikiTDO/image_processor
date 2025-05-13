@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import './ZoomControls.css';
 interface ZoomControlsProps {
   zoomLevel: number;
   zoomPresets: number[];
@@ -7,12 +8,7 @@ interface ZoomControlsProps {
 
 
 const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, zoomPresets, onZoomChange }) => {
-  const size = Math.min(Math.max(zoomLevel * 0.2, 30), 60);
-  const btnStyle: React.CSSProperties = {
-    width: size,
-    height: size,
-    fontSize: size * 0.5,
-  };
+  // Static button size is controlled via CSS; remove dynamic inline sizing
 
   // Zoom controls: circle buttons and central slider
   const minZoom = zoomPresets[0];
@@ -38,7 +34,6 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, zoomPresets, onZ
     <div className="zoom-controls" ref={wrapperRef} style={{ position: 'relative' }}>
       <button
         className="zoom-btn"
-        style={btnStyle}
         onClick={() => onZoomChange(Math.max(minZoom, zoomLevel - step))}
         aria-label="Zoom out"
       >
@@ -53,7 +48,6 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({ zoomLevel, zoomPresets, onZ
       </button>
       <button
         className="zoom-btn"
-        style={btnStyle}
         onClick={() => onZoomChange(Math.min(maxZoom, zoomLevel + step))}
         aria-label="Zoom in"
       >

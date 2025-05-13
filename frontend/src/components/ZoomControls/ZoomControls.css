@@ -1,0 +1,17 @@
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Ensure zoom buttons remain fixed size */
+.zoom-btn {
+  /* width/height defined in App.css */
+}
+.zoom-number-btn {
+  min-width: 4ch;
+  height: 44px;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
