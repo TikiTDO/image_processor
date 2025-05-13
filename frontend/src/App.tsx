@@ -177,21 +177,30 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (selectedId) {
-      const dlg = dialogMap[selectedId];
-      if (dlg && dlg.length > 0) {
+      const dlg = dialogMap[selectedId] || [];
+      if (dlg.length > 0) {
         setSelectedDialog(dlg);
         setDescMode('dialog');
-      } else {
-        // No existing dialog: clear any previous dialog display
-        setSelectedDialog([]);
+      } else if (editMode) {
+        // In edit mode with no existing dialog: initialize with narrator
+        const initial = ['0:'];
+        setSelectedDialog(initial);
         setDescMode('dialog');
+        setImageDialog(selectedId, initial, path).catch((err) =>
+          console.error('Error initializing dialog:', err)
+        );
+      } else {
+        // Not editing and no dialog: clear and stay in text mode (no dialog panel)
+        setSelectedDialog([]);
+        setRawDescription('');
+        setDescMode('text');
       }
     } else {
       setSelectedDialog([]);
       setRawDescription('');
       setDescMode('text');
     }
-  }, [selectedId, dialogMap, path]);
+  }, [selectedId, dialogMap, path, editMode]);
 
   // Derive preview map for first dialog line per image
   const dialogPreviewMap = useMemo<Record<string, string>>(() => {
@@ -329,21 +338,24 @@ const AppContent: React.FC = () => {
               return <img key={src} src={src} alt={selectedId || 'Enlarged'} />;
             })()}
             {descMode === 'text' ? (
-              <div className="description-panel">
-                <pre className="description-text">{rawDescription}</pre>
-                <button
-                  className="dialog-toggle"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const initDialog = rawDescription ? [rawDescription] : [];
-                    setSelectedDialog(initDialog);
-                    setImageDialog(selectedId, initDialog, path);
-                    setDescMode('dialog');
-                  }}
-                >
-                  Switch to dialog mode
-                </button>
-              </div>
+              // Only show description panel if editing or if there's text to display
+              (editMode || rawDescription.length > 0) ? (
+                <div className="description-panel">
+                  <pre className="description-text">{rawDescription}</pre>
+                  <button
+                    className="dialog-toggle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const initDialog = rawDescription ? [rawDescription] : [];
+                      setSelectedDialog(initDialog);
+                      setImageDialog(selectedId, initDialog, path);
+                      setDescMode('dialog');
+                    }}
+                  >
+                    Switch to dialog mode
+                  </button>
+                </div>
+              ) : null
             ) : (
               <div className="dialog-sidebar">
                 {/* Global edit mode: show edit fields when enabled, otherwise read-only */}

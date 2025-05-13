@@ -40,9 +40,9 @@ services:
       - frontend_node_modules:/app/node_modules
       # Mount backend certificates for HTTPS
       - ./backend/certs:/backend/certs:ro
-    ports:
-      # Host port 5800 mapped to container port 5800 (frontend dev server listens on 5800), bound to localhost only
-      - "127.0.0.1:5800:5800"
+    # App is proxied by the go backend, so no need to expose ports here
+    # ports:
+    #   - "127.0.0.1:5800:5800"
     environment:
       # Point frontend to backend container on port 5700
       - BACKEND_URL=https://backend:5700
