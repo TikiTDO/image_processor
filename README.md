@@ -1,9 +1,10 @@
 # Image Processor
 
-This repository contains a Go-based backend and a React + TypeScript frontend for loading, displaying, and reordering a directory of images. Reordering is persisted to disk via a simple metadata file.
+This repository contains a Go-based backend and a React + TypeScript frontend for loading, displaying, and reordering images. Per-image metadata is stored under `metadata/<prefix>/<hash>/` directories. Each directory contains a symlink `image` back to the original file along with `timestamp.json` and `dialog.json`.
 
 ## Directory Structure
 - backend/: Go HTTP server (Gin), image API, and static image serving
+- backend/images/: default image directory with `metadata/` subfolder for per-image data
 - frontend/: React + TypeScript UI using Vite and dnd-kit for drag-and-drop
 
 ## Backend Setup
@@ -68,4 +69,13 @@ You can also run the end-to-end Playwright tests in Docker by bringing up the fr
 # This will build the e2e test image, start the frontend service, and run tests
 docker-compose up --exit-code-from e2e frontend e2e
 ```
+
+## Production Build
+
+To generate static frontend assets in `backend/static` run:
+
+```sh
+bash scripts/build-static.sh
+```
+
 > Note: The backend service uses **reflex** to watch for changes in `.go` files and will automatically rebuild and restart when you modify backend code.
