@@ -43,3 +43,8 @@ backend/certs/
 .venv/
 venv/
 caption
+
+# AI context
+local
+local/*
+stable-diffusion-webui-forge
