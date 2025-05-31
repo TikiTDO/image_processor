@@ -10,6 +10,11 @@ This repository contains a Go-based backend and a React + TypeScript frontend fo
 ## Backend Setup
 1. Install Go (>= 1.18).
 2. cd backend
+3. (First-time) generate self-signed TLS certificates for localhost:
+   ```sh
+   bash ../scripts/generate-local-certs.sh
+   ```
+   This creates `backend/certs/cert.pem` and `backend/certs/key.pem` with SAN entries for localhost. You may need to trust the certificate in your browser.
 3. Ensure Go can write to your system temp directory (default: `/tmp`) for build caches.
 4. Run `go mod tidy` to fetch dependencies.
 5. Place your `.jpg`, `.jpeg`, and `.png` files into the `backend/images/` directory (it will be created automatically on first run).
