@@ -78,5 +78,14 @@ func SetupRouter() *gin.Engine {
   
    // Bulk dialog retrieval
    r.GET("/api/dialogs", handleGetAllDialogs)
+
+   // SD-Forge integration endpoints (v1)
+   v1 := r.Group("/api/v1")
+   {
+       v1.POST("/txt2img", handleTxt2Img)
+       v1.POST("/img2img", handleImg2Img)
+       v1.GET("/progress", handleProgress)
+       v1.POST("/regions", handleRegions)
+   }
    return r
 }

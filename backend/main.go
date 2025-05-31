@@ -1,23 +1,24 @@
 package main
 
 import (
-	"crypto/tls"
-	"embed"
-	"io/fs"
-	"log"
-	"math/rand"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
+   "crypto/tls"
+   "embed"
+   "io/fs"
+   "log"
+   "math/rand"
+   "net/http"
+   "net/http/httputil"
+   "net/url"
+   "os"
+   "path/filepath"
+   "strings"
+   "time"
 
-	"image-processor-backend/internal/api"
+   "image-processor-backend/internal/api"
+   "image-processor-backend/internal/forgeclient"
 
-	"github.com/gin-gonic/gin"
-	"github.com/quic-go/quic-go/http3"
+   "github.com/gin-gonic/gin"
+   "github.com/quic-go/quic-go/http3"
 )
 
 //go:embed static
@@ -41,11 +42,12 @@ type ReorderResponse = api.ReorderResponse
 
 // Config holds server configuration loaded from environment.
 type Config struct {
-   Mode         string // dev or prod
-   DevServerURL string // when in dev mode
-   ImageDir     string
-   ServerHost   string
-   ServerPort   string
+   Mode           string // dev or prod
+   DevServerURL   string // when in dev mode
+   ImageDir       string
+   ServerHost     string
+   ServerPort     string
+   ForgeServerURL string // SD-Forge server URL
 }
 
 // loadConfig reads configuration from environment variables with sensible defaults.
@@ -81,6 +83,12 @@ func loadConfig() Config {
    } else {
        cfg.ServerPort = "5700"
    }
+   // SD-Forge server URL
+   if f := os.Getenv("FORGE_SERVER_URL"); f != "" {
+       cfg.ForgeServerURL = f
+   } else {
+       cfg.ForgeServerURL = "http://localhost:7860"
+   }
    return cfg
 }
 
@@ -96,6 +104,8 @@ func main() {
 		log.Fatalf("Could not create image dir: %v", err)
 	}
 	api.SetImageDir(imageDir)
+	// Initialize forgeclient for SD-Forge integration
+	api.SetForgeClient(forgeclient.NewClient(cfg.ForgeServerURL))
 	if err := api.StartWatcher(imageDir); err != nil {
 		log.Println("Warning: file watcher not started:", err)
 	}
