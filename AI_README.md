@@ -179,7 +179,7 @@ docker-compose up --exit-code-from e2e frontend e2e  # run E2E
 5. **Build Orchestration**: introduce a Makefile or npm script to automate `scripts/build-static.sh` prior to Go builds and unify the build pipeline.
 
 ---
-## 8. Region Editing Plan
-- A zero-Python plan for region-based inpainting and editing via Go is detailed in `REGIONAL_EDIT_PLAN.md`.
+## 8. Image Manipulation Plan
+- A zero-Python plan for full image generation and editing (txt2img, img2img/infill, IP-Adapter, depth net, region prompts, model & LoRA management) is detailed in `IMAGE_MANIPULATION_PLAN.md`.
 ---
 *End of AI Assistant Guide*
