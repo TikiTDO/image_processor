@@ -87,6 +87,7 @@ const AppContent: React.FC = () => {
   // Directory management modal state
   const [showDirManagement, setShowDirManagement] = useState(false);
   // Forge panels state
+  const [addMode, setAddMode] = useState(false);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [addIndex, setAddIndex] = useState<number>(0);
   const [showImg2ImgPanel, setShowImg2ImgPanel] = useState(false);
@@ -297,6 +298,8 @@ const AppContent: React.FC = () => {
         onShowSpeakerConfig={() => setShowSpeakerConfig(true)}
         editMode={editMode}
         onToggleEditMode={() => setEditMode((v) => !v)}
+        addMode={addMode}
+        onToggleAddMode={() => setAddMode((v) => !v)}
         hiddenCount={hiddenIDs.length}
         onShowHidden={() => setShowHiddenModal(true)}
         imageCount={images.length}
@@ -343,6 +346,7 @@ const AppContent: React.FC = () => {
           refresh();
         }}
         onItemClick={toggleLightbox}
+        addMode={addMode}
         onAddImage={(index) => { setAddIndex(index); setShowAddPanel(true); }}
         onAddImage={handleAddImage}
         onRemoveImage={removeImage}

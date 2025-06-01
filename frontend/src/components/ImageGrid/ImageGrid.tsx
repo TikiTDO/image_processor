@@ -1,4 +1,4 @@
-import React, { Fragment, useRef, useState, useEffect } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -30,7 +30,9 @@ interface ImageGridProps {
   onRemoveImage?: (id: string) => void;
   /** Called when Hide Image is selected */
   onHideImage?: (id: string) => void;
-  /** Called when Add slot is clicked: position index to insert new image */
+  /** When true, hover-plus overlay is enabled and onAddImage will handle clicks */
+  addMode?: boolean;
+  /** Called when Add overlay is clicked: position index to insert new image */
   onAddImage?: (index: number) => void;
   /** Optional map of first dialog preview per image ID */
   dialogPreviewMap?: Record<string, string>;
@@ -45,6 +47,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onItemClick,
   onRemoveImage,
   onHideImage,
+  addMode = false,
   onAddImage,
   dialogPreviewMap,
 }) => {
@@ -81,6 +84,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }
   };
 
+  // Add-mode overlay index
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   // Previews for first dialog line provided by parent (if any)
 
   return (
@@ -101,43 +107,51 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       }}
     >
       <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
-        <div className="grid">
-          {images.map((img, idx) => {
-            const key = `${img.id}-${img.timestamp}`;
-            const previewLine = dialogPreviewMap?.[img.id] || '';
-            return (
-              <Fragment key={key}>
-                <SortableItem
-                  id={img.id}
-                  url={img.url}
-                  size={zoomLevel}
-                  dialogLine={previewLine}
-                  onClick={() => {
-                    if (isDragging.current) return;
-                    onItemClick(img.id);
-                  }}
-                  onRemove={() => onRemoveImage && onRemoveImage(img.id)}
-                  onHide={() => onHideImage && onHideImage(img.id)}
-                />
-                {onAddImage && idx < images.length - 1 && (
-                  <div
-                    className="add-slot"
-                    style={{ width: zoomLevel, height: zoomLevel }}
-                    onClick={() => onAddImage(idx + 1)}
-                  >
-                    +
-                  </div>
-                )}
-              </Fragment>
-            );
-          })}
-          {onAddImage && images.length > 0 && (
+        <div
+          className="grid"
+          ref={gridRef}
+          onMouseMove={(e) => {
+            if (!addMode || !onAddImage) return;
+            const rect = gridRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const x = e.clientX - rect.left;
+            const cell = zoomLevel + 10; // item size + gap
+            let idx = Math.floor(x / cell) + 1;
+            if (idx < 0) idx = 0;
+            if (idx > images.length) idx = images.length;
+            setHoverIndex(idx);
+          }}
+          onMouseLeave={() => setHoverIndex(null)}
+        >
+          {images.map((img) => (
+            <SortableItem
+              key={`${img.id}-${img.timestamp}`}
+              id={img.id}
+              url={img.url}
+              size={zoomLevel}
+              dialogLine={dialogPreviewMap?.[img.id] || ''}
+              onClick={() => { if (!isDragging.current) onItemClick(img.id); }}
+              onRemove={() => onRemoveImage && onRemoveImage(img.id)}
+              onHide={() => onHideImage && onHideImage(img.id)}
+            />
+          ))}
+          {addMode && hoverIndex !== null && (
             <div
-              className="add-slot"
-              style={{ width: zoomLevel, height: zoomLevel }}
-              onClick={() => onAddImage(images.length)}
+              className="add-slot"                
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: `${hoverIndex * (zoomLevel + 10) - zoomLevel / 2}px`,
+                width: zoomLevel,
+                height: zoomLevel,
+                pointerEvents: 'none',
+              }}
             >
-              +
+              <div
+                className="add-circle"
+                style={{ pointerEvents: 'auto', position: 'relative', top: '50%', transform: 'translateY(-50%)' }}
+                onClick={() => onAddImage(hoverIndex)}
+              />
             </div>
           )}
         </div>

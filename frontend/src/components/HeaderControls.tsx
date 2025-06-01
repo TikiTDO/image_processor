@@ -13,6 +13,8 @@ export interface HeaderControlsProps {
   onShowSpeakerConfig: () => void;
   editMode: boolean;
   onToggleEditMode: () => void;
+  addMode: boolean;
+  onToggleAddMode: () => void;
   hiddenCount: number;
   onShowHidden: () => void;
   /** Total number of images in current directory */
@@ -36,6 +38,8 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
   onShowSpeakerConfig,
   editMode,
   onToggleEditMode,
+  addMode,
+  onToggleAddMode,
   hiddenCount,
   onShowHidden,
   imageCount,
@@ -67,6 +71,9 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
     </button>
     <button className="edit-mode-btn" onClick={onToggleEditMode}>
       {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
+    </button>
+    <button className="add-mode-btn" onClick={onToggleAddMode}>
+      {addMode ? 'Exit Add Mode' : 'Enter Add Mode'}
     </button>
     <button className="edit-mode-btn" onClick={onShowHidden}>
       Hidden Images ({hiddenCount})
