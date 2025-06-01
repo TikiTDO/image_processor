@@ -66,8 +66,10 @@ Root
 - AI_README.md            ← This AI-focused guide
 - BASE_PROMPT.md          ← AI base prompt
 - README.md               ← Human quickstart
+- ENV_VARS.md             ← Environment variables used in the system (Update if adding any env vars)
 - docker-compose.yml      ← Dev containers
 - scripts/                ← setup & utility scripts
+- local/                  ← external reference files that are not commited to git
 
 backend/
 - main.go                 ← Server startup & config
@@ -83,6 +85,9 @@ frontend/
 - vite.config.ts          ← Dev server & proxy settings
 - package.json, tsconfig.json, …
 
+local/
+- stable-diffusion-webui-forge  ← The code used to run server at FORGE_SERVER_URL
+- sd-webui-regional-prompter    ← Reference implementation of the region-prompted extension used by the webui
 ---
 
 ## 4. Storage Layout

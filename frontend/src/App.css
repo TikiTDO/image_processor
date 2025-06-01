@@ -114,6 +114,23 @@ html.theme-light {
     box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
   }
 }
+/* Mode-based header shadow colors */
+.controls.edit-mode {
+  box-shadow: 0 2px 4px rgba(255, 165, 0, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  .controls.edit-mode {
+    box-shadow: 0 2px 4px rgba(255, 165, 0, 0.5);
+  }
+}
+.controls.add-mode {
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  .controls.add-mode {
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.5);
+  }
+}
 /* Shared styling for header, path picker, and zoom control buttons */
 .controls button,
 .path-btn,

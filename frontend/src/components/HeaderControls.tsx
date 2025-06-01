@@ -47,7 +47,7 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
   theme,
   onToggleTheme,
 }) => (
-  <div className="controls">
+  <div className={`controls${editMode ? ' edit-mode' : ''}${addMode ? ' add-mode' : ''}`}>
     <ZoomControls
       zoomLevel={zoomLevel}
       zoomPresets={zoomPresets}

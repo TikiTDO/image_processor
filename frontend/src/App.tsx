@@ -90,6 +90,25 @@ const AppContent: React.FC = () => {
   const [showDirManagement, setShowDirManagement] = useState(false);
   // Forge panels state
   const [addMode, setAddMode] = useState(false);
+  // Toggle handlers ensuring mutual exclusivity between edit and add modes
+  const toggleEditMode = useCallback(() => {
+    setEditMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setAddMode(false);
+      }
+      return next;
+    });
+  }, []);
+  const toggleAddMode = useCallback(() => {
+    setAddMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setEditMode(false);
+      }
+      return next;
+    });
+  }, []);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [addIndex, setAddIndex] = useState<number>(0);
   const [showImg2ImgPanel, setShowImg2ImgPanel] = useState(false);
@@ -299,9 +318,9 @@ const AppContent: React.FC = () => {
         speakerColors={speakerColors}
         onShowSpeakerConfig={() => setShowSpeakerConfig(true)}
         editMode={editMode}
-        onToggleEditMode={() => setEditMode((v) => !v)}
+        onToggleEditMode={toggleEditMode}
         addMode={addMode}
-        onToggleAddMode={() => setAddMode((v) => !v)}
+        onToggleAddMode={toggleAddMode}
         hiddenCount={hiddenIDs.length}
         onShowHidden={() => setShowHiddenModal(true)}
         imageCount={images.length}
