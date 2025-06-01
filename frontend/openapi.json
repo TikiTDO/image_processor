@@ -25,6 +25,37 @@
             }
           }
         }
+      },
+      "post": {
+        "operationId": "uploadImages",
+        "parameters": [
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  }
+                },
+                "required": ["files"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload result",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UploadResponse" } }
+            }
+          }
+        }
       }
     },
     "/api/images/{id}/dialog": {
@@ -88,8 +119,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "prev_id": { "type": ["string", "null"] },
-                  "next_id": { "type": ["string", "null"] }
+                  "prev_id": { "type": "string" },
+                  "next_id": { "type": "string" }
                 },
                 "required": ["prev_id", "next_id"]
               }
@@ -423,6 +454,154 @@
           "timestamp": { "type": "string", "format": "date-time" }
         },
         "required": ["id", "url", "timestamp"]
+      },
+      "DirEntry": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "image_count": { "type": "integer" },
+          "dir_count": { "type": "integer" }
+        },
+        "required": ["name", "image_count", "dir_count"]
+      },
+      "ReinitResponse": {
+        "type": "object",
+        "properties": {
+          "renamed": { "type": "integer" }
+        },
+        "required": ["renamed"]
+      },
+      "UploadResponse": {
+        "type": "object",
+        "properties": {
+          "uploaded": { "type": "integer" }
+        },
+        "required": ["uploaded"]
+      },
+      "SpeakerMeta": {
+        "type": "object",
+        "properties": {
+          "speaker_colors": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "speaker_names": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "required": ["speaker_colors", "speaker_names"]
+      },
+      "Txt2ImgRequest": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string" },
+          "negative_prompt": { "type": "string" },
+          "steps": { "type": "integer", "format": "int32" },
+          "cfg_scale": { "type": "number", "format": "float" },
+          "width": { "type": "integer", "format": "int32" },
+          "height": { "type": "integer", "format": "int32" },
+          "seed": { "type": "integer", "format": "int64", "nullable": true }
+        },
+        "required": ["prompt"]
+      },
+      "Img2ImgRequest": {
+        "type": "object",
+        "properties": {
+          "init_images": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "mask": { "type": "string" },
+          "prompt": { "type": "string" },
+          "negative_prompt": { "type": "string" },
+          "steps": { "type": "integer", "format": "int32" },
+          "cfg_scale": { "type": "number", "format": "float" },
+          "denoising_strength": { "type": "number", "format": "float" }
+        },
+        "required": ["init_images", "prompt"]
+      },
+      "ExtrasParams": {
+        "type": "object",
+        "properties": {
+          "operation": { "type": "string" },
+          "image": { "type": "string" }
+        },
+        "required": ["operation", "image"]
+      },
+      "ExtrasBatchParams": {
+        "type": "object",
+        "properties": {
+          "operations": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "images": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["operations", "images"]
+      },
+      "ImageResponse": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "info": { "type": "string" }
+        },
+        "required": ["images", "parameters", "info"]
+      },
+      "ModelInfo": {
+        "type": "object",
+        "properties": {
+          "model_name": { "type": "string" }
+        },
+        "required": ["model_name"]
+      },
+      "SwitchModelRequest": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" }
+        },
+        "required": ["model"]
+      },
+      "LoraInfo": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "required": ["name"]
+      },
+      "PingResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }
+        },
+        "required": ["status"]
+      },
+      "HistoryEntry": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }
+        },
+        "required": ["timestamp", "url"]
+      },
+      "ProgressResponse": {
+        "type": "object",
+        "properties": {
+          "current_image": { "type": "string" },
+          "progress": { "type": "number", "format": "float" },
+          "eta_relative": { "type": "number", "format": "float" }
+        },
+        "required": ["current_image", "progress", "eta_relative"]
       }
     }
   }
