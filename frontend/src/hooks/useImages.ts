@@ -1,35 +1,56 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryObserverResult } from '@tanstack/react-query';
 import { getImages, getImageDialogs, ImageMeta } from '../services/api';
 import { useSSE } from './useSSE';
 
-// Hook to manage images list and dialogs cache for a given path
-export function useImages(path: string) {
-  const [images, setImages] = useState<ImageMeta[]>([]);
-  const [dialogs, setDialogs] = useState<Record<string, string[]>>({});
+/**
+ * Hook to manage images list and dialogs cache for a given directory path.
+ * NOTE: Ensure ImageMeta and dialog types here match the backend /api/images and /api/dialogs endpoints.
+ */
+export function useImages(
+  path: string
+): {
+  images: ImageMeta[];
+  dialogs: Record<string, string[]>;
+  refresh: () => Promise<QueryObserverResult<ImageMeta[], Error>>;
+  refreshDialogs: () => Promise<QueryObserverResult<Record<string, string[]>, Error>>;
+  setImages: (
+    updater: ImageMeta[] | ((old?: ImageMeta[]) => ImageMeta[])
+  ) => void;
+} {
+  const queryClient = useQueryClient();
 
-  const fetchImages = useCallback(() => {
-    getImages(path)
-      .then(setImages)
-      .catch((err) => console.error('Error fetching images:', err));
-  }, [path]);
+  const {
+    data: images = [],
+    refetch: refetchImages,
+  } = useQuery<ImageMeta[], Error>(
+    ['images', path],
+    () => getImages(path),
+    { keepPreviousData: true }
+  );
 
-  // Initial fetch and on path change
-  useEffect(() => {
-    fetchImages();
-  }, [fetchImages]);
+  const {
+    data: dialogs = {},
+    refetch: refetchDialogs,
+  } = useQuery<Record<string, string[]>, Error>(
+    ['dialogs', path],
+    () => getImageDialogs(path)
+  );
 
-  // Subscribe to server-sent updates
-  useSSE('/api/updates', fetchImages);
+  // Invalidate queries on server-sent events updates
+  useSSE('/api/updates', () => {
+    queryClient.invalidateQueries(['images', path]);
+    queryClient.invalidateQueries(['dialogs', path]);
+  });
 
-  // Fetch all dialogs for images in this path
-  const fetchDialogs = useCallback(() => {
-    getImageDialogs(path)
-      .then(setDialogs)
-      .catch((err) => console.error('Error fetching dialogs:', err));
-  }, [path]);
-  useEffect(() => {
-    fetchDialogs();
-  }, [fetchDialogs]);
-
-  return { images, dialogs, refresh: fetchImages, refreshDialogs: fetchDialogs, setImages };
+  return {
+    images,
+    dialogs,
+    refresh: refetchImages,
+    refreshDialogs: refetchDialogs,
+    // Allow manual override or updater function for optimistic updates
+    setImages: (
+      updater: ImageMeta[] | ((old: ImageMeta[] | undefined) => ImageMeta[])
+    ) => queryClient.setQueryData<ImageMeta[]>(['images', path], updater),
+  };
 }

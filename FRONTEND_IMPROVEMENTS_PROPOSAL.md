@@ -25,13 +25,33 @@
 ### Progress Tracker
  - [x] React Query installation & setup
  - [x] `useProgress` migration
- - [ ] `useImages` migration
- - [ ] `PathPicker` migration
- - [ ] Dialog queries & mutations
- - [ ] Default path query
- - [ ] Speaker config queries & mutations
+ - [x] `useImages` migration
+ - [x] `PathPicker` migration
+ - [x] Dialog queries & mutations
+ - [x] Default path query
+ - [x] Speaker config queries & mutations
  - [ ] Other API queries/mutations
  - [ ] Code cleanup (remove legacy hooks)
+
+### Next Phase: OpenAPI-Driven Codegen Pipeline
+We will introduce an OpenAPI-based process to auto-generate TypeScript types and React Query hooks from the backend API spec, eliminating manual typing and syncing overhead.
+
+#### Proposed Steps
+ - [ ] Define and maintain an up-to-date OpenAPI (Swagger) specification for all `/api` endpoints.
+ - [ ] Add a codegen configuration (e.g., OpenAPI Generator or `openapi-typescript-codegen`) to generate:
+     - TypeScript interfaces for request and response payloads.
+     - React Query hooks (via the `typescript-react-query` generator) for each endpoint.
+ - [ ] Commit generated types/hooks to `frontend/src/api/` (or similar) and import them in place of manual services.
+ - [ ] Refactor existing data-fetching to use generated hooks for images, dialogs, speakers, progress, etc.
+ - [ ] Automate codegen execution in `package.json` scripts and CI (e.g., `npm run generate:api`).
+ - [ ] Update documentation to describe how to regenerate types/hooks after backend changes.
+
+#### Stage Tracker
+ - [ ] OpenAPI spec drafted and reviewed.
+ - [ ] Codegen toolchain installed and configured.
+ - [ ] Initial codegen run (types & hooks generated).
+ - [ ] Integration of generated hooks in core components.
+ - [ ] CI pipeline updated to run codegen on changes.
 
  ## Extract a Generic Data-Fetching Hook or Switch to React Query
  **Status**: Proposed

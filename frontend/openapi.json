@@ -1,0 +1,44 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Image Processor API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for Image Processor backend"
+  },
+  "servers": [
+    { "url": "http://localhost:5700", "description": "Local backend server" }
+  ],
+  "paths": {
+    "/api/images": {
+      "get": {
+        "operationId": "getImages",
+        "responses": {
+          "200": {
+            "description": "List of image metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImageMeta" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ImageMeta": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "url", "timestamp"]
+      }
+    }
+  }
+}

@@ -1,5 +1,4 @@
 import { fetchJson } from '../utils/fetchJson';
-import { Txt2ImgParams, Img2ImgParams, RegionEditParams, ImageResponse, ProgressResponse, HistoryEntry, ModelInfo, SwitchModelParams, LoraInfo } from '../types/forge';
 import {
   Txt2ImgParams,
   Img2ImgParams,

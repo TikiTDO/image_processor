@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { DirEntry, getDirs } from '../../services/api';
 
 interface PathPickerProps {
@@ -7,30 +8,16 @@ interface PathPickerProps {
 }
 
 const PathPicker: React.FC<PathPickerProps> = ({ path, onChange }) => {
-  const [entries, setEntries] = useState<DirEntry[]>([]);
   const [open, setOpen] = useState(false);
-  // Loading and error state for fetching directories
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryKey = ['dirs', path];
+  const {
+    data: entries,
+    isLoading: loading,
+    error,
+  } = useQuery<DirEntry[], Error>(queryKey, () => getDirs(path), { enabled: open, initialData: [] });
   const ref = useRef<HTMLDivElement>(null);
 
-  // Fetch subdirectories when opening or path changes
-  useEffect(() => {
-    if (open) {
-      setLoading(true);
-      setError(null);
-      getDirs(path)
-        .then((data) => {
-          // Ensure entries is always an array even if API returns null
-          setEntries(data ?? []);
-        })
-        .catch((err) => {
-          console.error('Error fetching dirs:', err);
-          setError(err.message || 'Error fetching directories');
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [open, path]);
+  // React Query handles fetching when 'open' becomes true
 
   // Close when clicking outside
   useEffect(() => {
@@ -61,7 +48,7 @@ const PathPicker: React.FC<PathPickerProps> = ({ path, onChange }) => {
             {path && <li key="up" onClick={upOne}>..</li>}
             {loading && <li key="loading">Loading...</li>}
             {!loading && error && (
-              <li key="error" className="error">{error}</li>
+              <li key="error" className="error">{error.message}</li>
             )}
             {!loading && !error && entries.map((d) => (
               <li

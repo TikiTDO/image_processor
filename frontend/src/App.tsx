@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
@@ -157,26 +158,39 @@ const AppContent: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, images]);
+  // Mutation for saving dialog entries
+  const queryClient = useQueryClient();
+  const dialogMutation = useMutation<
+    void,
+    Error,
+    { id: string; dialog: string[] }
+  >({
+    mutationFn: ({ id, dialog }) => setImageDialog(id, dialog, path),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['dialogs', path]);
+    },
+  });
   // Debounced save for dialog edits (1s)
   const saveDialogDebounced = useMemo(
     () => debounce((dlg: string[]) => {
       if (selectedId) {
-        setImageDialog(selectedId, dlg, path).catch((err) =>
-          console.error('Error saving dialog:', err)
-        );
+        dialogMutation.mutate({ id: selectedId, dialog: dlg });
       }
     }, 1000),
-    [selectedId, path]
+    [dialogMutation]
   );
 
-  // On mount, if no persisted path, fetch server default path
+  // Fetch default path when none is set
+  const { data: defaultPath = '' } = useQuery<string, Error>(
+    ['defaultPath'],
+    () => getDefaultPath(),
+    { enabled: path === '' }
+  );
   useEffect(() => {
-    if (path === '') {
-      getDefaultPath()
-        .then((p) => setPath(p || ''))
-        .catch((err) => console.error('Error fetching default path:', err));
+    if (defaultPath !== undefined && path === '') {
+      setPath(defaultPath);
     }
-  }, []);
+  }, [defaultPath, path]);
   // For new updates, refresh images
   useSSE('/api/updates', refresh);
   // Persist path to sessionStorage and localStorage whenever it changes

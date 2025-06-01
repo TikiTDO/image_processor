@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getSpeakers, setSpeakers } from '../services/api';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getSpeakers, setSpeakers, SpeakerMeta } from '../services/api';
 
 export interface SpeakerContextType {
   colors: Record<number, string>;
@@ -17,50 +18,26 @@ interface SpeakerProviderProps {
 }
 
 export const SpeakerProvider: React.FC<SpeakerProviderProps> = ({ children }) => {
-  const [colors, setColors] = useState<Record<number, string>>({});
-  const [names, setNames] = useState<Record<number, string>>({});
-
-  // Load initial speaker data from server; initialize server if empty
-  useEffect(() => {
-    const defaults = { speaker_colors: { 0: '#000000' }, speaker_names: { 0: 'Narrator' } };
-    getSpeakers()
-      .then((meta) => {
-        const { speaker_colors, speaker_names } = meta;
-        if (speaker_colors && Object.keys(speaker_colors).length > 0) {
-          setColors(speaker_colors);
-        } else {
-          setColors(defaults.speaker_colors);
-        }
-        if (speaker_names && Object.keys(speaker_names).length > 0) {
-          setNames(speaker_names);
-        } else {
-          setNames(defaults.speaker_names);
-        }
-        // If server had no data, write defaults
-        if (
-          (!speaker_colors || Object.keys(speaker_colors).length === 0) ||
-          (!speaker_names || Object.keys(speaker_names).length === 0)
-        ) {
-          setSpeakers(defaults).catch((err) => console.error('Error initializing speaker data:', err));
-        }
-      })
-      .catch((err) => console.error('Error loading speaker data:', err));
-  }, []);
+  const queryClient = useQueryClient();
+  const defaults: SpeakerMeta = { speaker_colors: { 0: '#000000' }, speaker_names: { 0: 'Narrator' } };
+  const {
+    data = defaults,
+    isLoading,
+    error,
+  } = useQuery<SpeakerMeta, Error>(['speakers'], getSpeakers, { initialData: defaults });
+  const saveMutation = useMutation(setSpeakers, {
+    onSuccess: () => queryClient.invalidateQueries(['speakers']),
+  });
+  const { speaker_colors: colors, speaker_names: names } = data;
 
   const updateColor = (id: number, color: string) => {
     const newColors = { ...colors, [id]: color };
-    setColors(newColors);
-    setSpeakers({ speaker_colors: newColors, speaker_names: names }).catch((err) =>
-      console.error('Error saving speaker data:', err)
-    );
+    saveMutation.mutate({ speaker_colors: newColors, speaker_names: names });
   };
 
   const updateName = (id: number, name: string) => {
     const newNames = { ...names, [id]: name };
-    setNames(newNames);
-    setSpeakers({ speaker_colors: colors, speaker_names: newNames }).catch((err) =>
-      console.error('Error saving speaker data:', err)
-    );
+    saveMutation.mutate({ speaker_colors: colors, speaker_names: newNames });
   };
 
   const removeSpeaker = (id: number) => {
@@ -68,11 +45,7 @@ export const SpeakerProvider: React.FC<SpeakerProviderProps> = ({ children }) =>
     delete newNames[id];
     const newColors = { ...colors };
     delete newColors[id];
-    setNames(newNames);
-    setColors(newColors);
-    setSpeakers({ speaker_colors: newColors, speaker_names: newNames }).catch((err) =>
-      console.error('Error saving speaker data:', err)
-    );
+    saveMutation.mutate({ speaker_colors: newColors, speaker_names: newNames });
   };
 
   const addSpeaker = () => {
@@ -80,11 +53,7 @@ export const SpeakerProvider: React.FC<SpeakerProviderProps> = ({ children }) =>
     const next = ids.length > 0 ? Math.max(...ids) + 1 : 1;
     const newNames = { ...names, [next]: `Speaker ${next}` };
     const newColors = { ...colors, [next]: '#000000' };
-    setNames(newNames);
-    setColors(newColors);
-    setSpeakers({ speaker_colors: newColors, speaker_names: newNames }).catch((err) =>
-      console.error('Error saving speaker data:', err)
-    );
+    saveMutation.mutate({ speaker_colors: newColors, speaker_names: newNames });
   };
 
   return (
