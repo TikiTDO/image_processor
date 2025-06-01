@@ -7,6 +7,7 @@ import PathPicker from './components/PathPicker';
 import ZoomControls from './components/ZoomControls';
 import ImageGrid from './components/ImageGrid';
 import SpeakerConfigModal from './components/SpeakerConfigModal';
+import Txt2ImgPanel from './components/forge/Txt2ImgPanel';
 import ErrorOverlay from './components/ErrorOverlay';
 import ScrollToTop from './components/ScrollToTop';
 import HeaderControls from './components/HeaderControls';
@@ -16,6 +17,9 @@ import {
   setImageDialog,
   getDefaultPath,
 } from './services/api';
+import Img2ImgPanel from './components/forge/Img2ImgPanel';
+import ExtrasPanel from './components/forge/ExtrasPanel';
+import RegionEditor from './components/forge/RegionEditor';
 
 // Simple debounce util
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
@@ -81,6 +85,23 @@ const AppContent: React.FC = () => {
   const [showHiddenModal, setShowHiddenModal] = useState(false);
   // Directory management modal state
   const [showDirManagement, setShowDirManagement] = useState(false);
+  // Forge panels
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const [addIndex, setAddIndex] = useState<number>(0);
+  const [showImg2ImgPanel, setShowImg2ImgPanel] = useState(false);
+  const [infillMode, setInfillMode] = useState(false);
+  const [showRegionEditor, setShowRegionEditor] = useState(false);
+  const [showExtrasPanel, setShowExtrasPanel] = useState(false);
+  // Compute initImage URL for lightbox and editing panels
+  const selectedMeta = selectedId ? images.find((img) => img.id === selectedId) : undefined;
+  const initImage = selectedMeta
+    ? `${selectedMeta.url}?t=${encodeURIComponent(selectedMeta.timestamp)}&b=${bustMap[selectedMeta.id] || 0}`
+    : '';
+  // Handler when Add slot is clicked in ImageGrid
+  const handleAddImage = (index: number) => {
+    setAddIndex(index);
+    setShowAddPanel(true);
+  };
   // Handler to reinitialize filenames in directory
   const handleReinitDirectory = async () => {
     try {
@@ -319,6 +340,8 @@ const AppContent: React.FC = () => {
           refresh();
         }}
         onItemClick={toggleLightbox}
+        onAddImage={(index) => { setAddIndex(index); setShowAddPanel(true); }}
+        onAddImage={handleAddImage}
         onRemoveImage={removeImage}
         onHideImage={hideImage}
       />
@@ -339,12 +362,23 @@ const AppContent: React.FC = () => {
             ◀
           </button>
           <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
-            {(() => {
-              const sel = images.find((img) => img.id === selectedId);
-              const bust = sel ? (bustMap[sel.id] || 0) : 0;
-              const src = sel ? `${sel.url}?t=${encodeURIComponent(sel.timestamp)}&b=${bust}` : '';
-              return <img key={src} src={src} alt={selectedId || 'Enlarged'} />;
-            })()}
+            {/* Display selected image */}
+            <img src={initImage} alt={selectedId || 'Enlarged'} />
+            {/* Editing tools */}
+            <div className="lightbox-tools">
+              <button onClick={() => { setInfillMode(false); setShowImg2ImgPanel(true); }}>
+                Full Edit
+              </button>
+              <button onClick={() => { setInfillMode(true); setShowImg2ImgPanel(true); }}>
+                Infill
+              </button>
+              <button onClick={() => setShowRegionEditor(true)}>
+                Regions
+              </button>
+              <button onClick={() => setShowExtrasPanel(true)}>
+                Extras
+              </button>
+            </div>
             {descMode === 'text' ? (
               // Only show description panel if editing or if there's text to display
               (editMode || rawDescription.length > 0) ? (
@@ -499,6 +533,62 @@ const AppContent: React.FC = () => {
               <p>No hidden images.</p>
             )}
             <button onClick={() => setShowHiddenModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+      {showAddPanel && (
+        <div className="modal-overlay" onClick={() => setShowAddPanel(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <Txt2ImgPanel
+              onComplete={() => {
+                setShowAddPanel(false);
+                refresh();
+              }}
+              onCancel={() => setShowAddPanel(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showImg2ImgPanel && (
+        <div className="modal-overlay" onClick={() => setShowImg2ImgPanel(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <Img2ImgPanel
+              initImage={initImage}
+              infill={infillMode}
+              onComplete={() => {
+                setShowImg2ImgPanel(false);
+                refresh();
+              }}
+              onCancel={() => setShowImg2ImgPanel(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showRegionEditor && (
+        <div className="modal-overlay" onClick={() => setShowRegionEditor(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <RegionEditor
+              initImage={initImage}
+              onComplete={() => {
+                setShowRegionEditor(false);
+                refresh();
+              }}
+              onCancel={() => setShowRegionEditor(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showExtrasPanel && (
+        <div className="modal-overlay" onClick={() => setShowExtrasPanel(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <ExtrasPanel
+              initImage={initImage}
+              onComplete={() => {
+                setShowExtrasPanel(false);
+                refresh();
+              }}
+              onCancel={() => setShowExtrasPanel(false)}
+            />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { Fragment, useRef, useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -30,6 +30,8 @@ interface ImageGridProps {
   onRemoveImage?: (id: string) => void;
   /** Called when Hide Image is selected */
   onHideImage?: (id: string) => void;
+  /** Called when Add slot is clicked: position index to insert new image */
+  onAddImage?: (index: number) => void;
   /** Optional map of first dialog preview per image ID */
   dialogPreviewMap?: Record<string, string>;
 }
@@ -43,6 +45,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onItemClick,
   onRemoveImage,
   onHideImage,
+  onAddImage,
   dialogPreviewMap,
 }) => {
   const isDragging = useRef(false);
@@ -99,28 +102,44 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     >
       <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
         <div className="grid">
-          {images.map((img) => {
-            // Use hash-based URL; cache invalidation via hash change without extra params
+          {images.map((img, idx) => {
             const key = `${img.id}-${img.timestamp}`;
-            const url = img.url;
-            // Determine preview line from provided map
             const previewLine = dialogPreviewMap?.[img.id] || '';
             return (
-              <SortableItem
-                key={key}
-                id={img.id}
-                url={url}
-                size={zoomLevel}
-                dialogLine={previewLine}
-                onClick={() => {
-                  if (isDragging.current) return;
-                  onItemClick(img.id);
-                }}
-                onRemove={() => onRemoveImage && onRemoveImage(img.id)}
-                onHide={() => onHideImage && onHideImage(img.id)}
-              />
+              <Fragment key={key}>
+                <SortableItem
+                  id={img.id}
+                  url={img.url}
+                  size={zoomLevel}
+                  dialogLine={previewLine}
+                  onClick={() => {
+                    if (isDragging.current) return;
+                    onItemClick(img.id);
+                  }}
+                  onRemove={() => onRemoveImage && onRemoveImage(img.id)}
+                  onHide={() => onHideImage && onHideImage(img.id)}
+                />
+                {onAddImage && idx < images.length - 1 && (
+                  <div
+                    className="add-slot"
+                    style={{ width: zoomLevel, height: zoomLevel }}
+                    onClick={() => onAddImage(idx + 1)}
+                  >
+                    +
+                  </div>
+                )}
+              </Fragment>
             );
           })}
+          {onAddImage && images.length > 0 && (
+            <div
+              className="add-slot"
+              style={{ width: zoomLevel, height: zoomLevel }}
+              onClick={() => onAddImage(images.length)}
+            >
+              +
+            </div>
+          )}
         </div>
       </SortableContext>
     </DndContext>

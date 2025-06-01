@@ -1,4 +1,11 @@
 import { fetchJson } from '../utils/fetchJson';
+import {
+  Txt2ImgParams,
+  Img2ImgParams,
+  RegionEditParams,
+  ImageResponse,
+  ProgressResponse,
+} from '../types/forge';
 
 // Metadata for an image
 export interface ImageMeta {
@@ -149,4 +156,55 @@ export async function getImageDialogs(path?: string): Promise<Record<string, str
     { dialogs: {} }
   );
   return res.dialogs;
+}
+
+// ==== SD-Forge endpoints ==== 
+
+/**
+ * Text-to-image generation via SD-Forge.
+ */
+export async function txt2img(params: Txt2ImgParams): Promise<ImageResponse> {
+  const res = await fetch('/api/v1/txt2img', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`txt2img failed: ${res.status}`);
+  return (await res.json()) as ImageResponse;
+}
+
+/**
+ * Image-to-image editing via SD-Forge.
+ */
+export async function img2img(params: Img2ImgParams): Promise<ImageResponse> {
+  const res = await fetch('/api/v1/img2img', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`img2img failed: ${res.status}`);
+  return (await res.json()) as ImageResponse;
+}
+
+/**
+ * Poll SD-Forge progress.
+ */
+export async function getProgress(skipCurrent: boolean = false): Promise<ProgressResponse> {
+  const query = skipCurrent ? '?skip_current_image=true' : '';
+  const res = await fetch(`/api/v1/progress${query}`);
+  if (!res.ok) throw new Error(`getProgress failed: ${res.status}`);
+  return (await res.json()) as ProgressResponse;
+}
+
+/**
+ * Region-based editing via SD-Forge.
+ */
+export async function regionEdit(params: RegionEditParams): Promise<ImageResponse> {
+  const res = await fetch('/api/v1/regions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`regionEdit failed: ${res.status}`);
+  return (await res.json()) as ImageResponse;
 }

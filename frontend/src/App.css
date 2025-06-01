@@ -558,6 +558,20 @@ body {
   margin-top: 0;
   margin-bottom: 0.5rem;
 }
+/* Add Slot styling for image insertion */
+.add-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #666;
+  background: #f9f9f9;
+  color: #666;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.add-slot:hover {
+  background: #eee;
+}
 
 /* Image count button styling */
 .image-count-btn {
