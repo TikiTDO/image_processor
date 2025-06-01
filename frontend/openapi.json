@@ -133,6 +133,284 @@
           }
         }
       }
+    },
+    "/api/v1/progress": {
+      "get": {
+        "operationId": "getProgress",
+        "parameters": [
+          {
+            "name": "skip_current_image",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Progress information",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProgressResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/updates": {
+      "get": {
+        "operationId": "getUpdates",
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream of update paths",
+            "content": {
+              "text/event-stream": { "schema": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/dirs": {
+      "get": {
+        "operationId": "getDirs",
+        "parameters": [
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of directory entries",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DirEntry" } } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/dirs/reinit": {
+      "post": {
+        "operationId": "reinitDirs",
+        "parameters": [
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Number of files renamed",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ReinitResponse" } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/dialogs": {
+      "get": {
+        "operationId": "getDialogs",
+        "parameters": [
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "All dialogs map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dialogs": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } }
+                  },
+                  "required": ["dialogs"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/speakers": {
+      "get": {
+        "operationId": "getSpeakers",
+        "responses": {
+          "200": {
+            "description": "Speaker metadata",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SpeakerMeta" } }
+            }
+          }
+        }
+      }
+      ,
+      "post": {
+        "operationId": "setSpeakers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SpeakerMeta" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated speaker metadata",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SpeakerMeta" } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/txt2img": {
+      "post": {
+        "operationId": "txt2Img",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Txt2ImgRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Text-to-image response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImageResponse" } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/img2img": {
+      "post": {
+        "operationId": "img2Img",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Img2ImgRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image-to-image response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImageResponse" } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/regions": {
+      "post": {
+        "operationId": "regions",
+        "responses": { "501": { "description": "Not implemented" } }
+      }
+    }
+    ,
+    "/api/v1/extras": {
+      "post": {
+        "operationId": "extras",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ExtrasParams" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Extra operation response",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ImageResponse" } } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/extras/batch": {
+      "post": {
+        "operationId": "extrasBatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ExtrasBatchParams" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch extras response",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ImageResponse" } } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/models": {
+      "get": {
+        "operationId": "getModels",
+        "responses": {
+          "200": {
+            "description": "Available models",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ModelInfo" } } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/models/switch": {
+      "post": {
+        "operationId": "switchModel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SwitchModelRequest" } }
+          }
+        },
+        "responses": { "204": { "description": "Model switched" } }
+      }
+    }
+    ,
+    "/api/v1/loras": {
+      "get": {
+        "operationId": "getLoras",
+        "responses": {
+          "200": {
+            "description": "Available LoRAs",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/LoraInfo" } } }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/api/v1/ping": {
+      "get": {
+        "operationId": "ping",
+        "responses": { "200": { "description": "Pong response", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PingResponse" } } } } }
+      }
+    }
+    ,
+    "/api/v1/history": {
+      "get": {
+        "operationId": "getHistory",
+        "parameters": [ { "name": "imageID", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": {
+            "description": "History entries",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/HistoryEntry" } } }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

@@ -17,7 +17,7 @@ export function useProgress(
     error = null,
     isLoading: loading,
   } = useGetProgressQuery(
-    { skipCurrent },
+    { skipCurrentImage: skipCurrent },
     { refetchInterval: 1000, keepPreviousData: true }
   );
   return { data, error, loading };
