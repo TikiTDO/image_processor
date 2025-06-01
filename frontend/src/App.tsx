@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
@@ -81,34 +81,14 @@ const AppContent: React.FC = () => {
   const [rawDescription, setRawDescription] = useState<string>('');
   const [descMode, setDescMode] = useState<'text' | 'dialog'>('text');
   const [showSpeakerConfig, setShowSpeakerConfig] = useState(false);
-  // Global edit mode: when true, all dialog panels are editable
-  const [editMode, setEditMode] = useState<boolean>(false);
+  // UI mode: 'view'=default, 'dialog'=edit dialogs, 'image'=edit/generate images
+  const [mode, setMode] = useState<'view' | 'dialog' | 'image'>('view');
   // Hidden images state
   const [hiddenIDs, setHiddenIDs] = useState<string[]>([]);
   const [showHiddenModal, setShowHiddenModal] = useState(false);
   // Directory management modal state
   const [showDirManagement, setShowDirManagement] = useState(false);
   // Forge panels state
-  const [addMode, setAddMode] = useState(false);
-  // Toggle handlers ensuring mutual exclusivity between edit and add modes
-  const toggleEditMode = useCallback(() => {
-    setEditMode((prev) => {
-      const next = !prev;
-      if (next) {
-        setAddMode(false);
-      }
-      return next;
-    });
-  }, []);
-  const toggleAddMode = useCallback(() => {
-    setAddMode((prev) => {
-      const next = !prev;
-      if (next) {
-        setEditMode(false);
-      }
-      return next;
-    });
-  }, []);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [addIndex, setAddIndex] = useState<number>(0);
   const [showImg2ImgPanel, setShowImg2ImgPanel] = useState(false);
@@ -232,7 +212,7 @@ const AppContent: React.FC = () => {
   const closeLightbox = () => {
     if (suppressClicks.current) return;
     // On closing, save any dialog edits in edit mode
-    if (editMode && selectedId && descMode === 'dialog') {
+    if (mode === 'dialog' && selectedId && descMode === 'dialog') {
       setImageDialog(selectedId, selectedDialog, path)
         .then(() => refreshDialogs())
         .catch((err) => {
@@ -252,7 +232,7 @@ const AppContent: React.FC = () => {
       if (dlg.length > 0) {
         setSelectedDialog(dlg);
         setDescMode('dialog');
-      } else if (editMode) {
+      } else if (mode === 'dialog') {
         // In edit mode with no existing dialog: initialize with narrator
         const initial = ['0:'];
         setSelectedDialog(initial);
@@ -271,7 +251,7 @@ const AppContent: React.FC = () => {
       setRawDescription('');
       setDescMode('text');
     }
-  }, [selectedId, dialogMap, path, editMode]);
+  }, [selectedId, dialogMap, path, mode]);
 
   // Derive preview map for first dialog line per image
   const dialogPreviewMap = useMemo<Record<string, string>>(() => {
@@ -317,10 +297,8 @@ const AppContent: React.FC = () => {
         speakerNames={speakerNames}
         speakerColors={speakerColors}
         onShowSpeakerConfig={() => setShowSpeakerConfig(true)}
-        editMode={editMode}
-        onToggleEditMode={toggleEditMode}
-        addMode={addMode}
-        onToggleAddMode={toggleAddMode}
+        mode={mode}
+        onModeChange={setMode}
         hiddenCount={hiddenIDs.length}
         onShowHidden={() => setShowHiddenModal(true)}
         imageCount={images.length}
@@ -367,7 +345,7 @@ const AppContent: React.FC = () => {
           refresh();
         }}
         onItemClick={toggleLightbox}
-        addMode={addMode}
+        addMode={mode === 'image'}
         onAddImage={handleAddImage}
         onRemoveImage={removeImage}
         onHideImage={hideImage}
@@ -411,7 +389,7 @@ const AppContent: React.FC = () => {
             </div>
             {descMode === 'text' ? (
               // Only show description panel if editing or if there's text to display
-              (editMode || rawDescription.length > 0) ? (
+              (mode === 'dialog' || rawDescription.length > 0) ? (
                 <div className="description-panel">
                   <pre className="description-text">{rawDescription}</pre>
                   <button
@@ -431,7 +409,7 @@ const AppContent: React.FC = () => {
             ) : (
               <div className="dialog-sidebar">
                 {/* Global edit mode: show edit fields when enabled, otherwise read-only */}
-                {!editMode ? (
+                {mode !== 'dialog' ? (
                   <div className="dialog-read">
                     {selectedDialog.map((line, idx) => {
                       const parts = line.split(':');

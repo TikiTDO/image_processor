@@ -115,21 +115,48 @@ html.theme-light {
   }
 }
 /* Mode-based header shadow colors */
-.controls.edit-mode {
+ .controls.mode-dialog {
   box-shadow: 0 2px 4px rgba(255, 165, 0, 0.5);
 }
 @media (prefers-color-scheme: dark) {
-  .controls.edit-mode {
+  .controls.mode-dialog {
     box-shadow: 0 2px 4px rgba(255, 165, 0, 0.5);
   }
 }
-.controls.add-mode {
+ .controls.mode-image {
   box-shadow: 0 2px 4px rgba(0, 123, 255, 0.5);
 }
 @media (prefers-color-scheme: dark) {
-  .controls.add-mode {
+  .controls.mode-image {
     box-shadow: 0 2px 4px rgba(0, 123, 255, 0.5);
   }
+}
+/* Segmented control for UI modes */
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 4px;
+}
+.segmented-control button {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-size: 0.9em;
+}
+.segmented-control button + button {
+  border-left: 1px solid var(--btn-border);
+}
+.segmented-control button:hover,
+.segmented-control button.active {
+  background: var(--btn-hover-bg);
+}
+.segmented-control button:focus {
+  outline: none;
 }
 /* Shared styling for header, path picker, and zoom control buttons */
 .controls button,

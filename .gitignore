@@ -33,6 +33,7 @@ backend/image-processor-backend
 
 backend/.cache
 backend/images/*
+backend/images.*/*
 !backend/images/.keep
 tmpdir
 tmp

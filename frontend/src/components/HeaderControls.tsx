@@ -11,10 +11,10 @@ export interface HeaderControlsProps {
   speakerNames: Record<string, string>;
   speakerColors: Record<number, string>;
   onShowSpeakerConfig: () => void;
-  editMode: boolean;
-  onToggleEditMode: () => void;
-  addMode: boolean;
-  onToggleAddMode: () => void;
+  /** UI mode: 'view', 'dialog', or 'image' */
+  mode: 'view' | 'dialog' | 'image';
+  /** Change UI mode */
+  onModeChange: (mode: 'view' | 'dialog' | 'image') => void;
   hiddenCount: number;
   onShowHidden: () => void;
   /** Total number of images in current directory */
@@ -36,10 +36,8 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
   speakerNames,
   speakerColors,
   onShowSpeakerConfig,
-  editMode,
-  onToggleEditMode,
-  addMode,
-  onToggleAddMode,
+  mode,
+  onModeChange,
   hiddenCount,
   onShowHidden,
   imageCount,
@@ -47,7 +45,7 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
   theme,
   onToggleTheme,
 }) => (
-  <div className={`controls${editMode ? ' edit-mode' : ''}${addMode ? ' add-mode' : ''}`}>
+  <div className={`controls mode-${mode}`}>
     <ZoomControls
       zoomLevel={zoomLevel}
       zoomPresets={zoomPresets}
@@ -69,12 +67,17 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
         );
       })}
     </button>
-    <button onClick={onToggleEditMode}>
-      {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
-    </button>
-    <button onClick={onToggleAddMode}>
-      {addMode ? 'Exit Add Mode' : 'Enter Add Mode'}
-    </button>
+    <div className="segmented-control">
+      <button className={mode === 'view' ? 'active' : ''} onClick={() => onModeChange('view')}>
+        View
+      </button>
+      <button className={mode === 'dialog' ? 'active' : ''} onClick={() => onModeChange('dialog')}>
+        Edit Dialogs
+      </button>
+      <button className={mode === 'image' ? 'active' : ''} onClick={() => onModeChange('image')}>
+        Edit Images
+      </button>
+    </div>
     <button onClick={onShowHidden}>
       Hidden Images ({hiddenCount})
     </button>
