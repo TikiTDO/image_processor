@@ -65,3 +65,47 @@ export interface ProgressResponse {
   progress: number;      // 0.0 to 1.0
   eta_relative: number;  // estimated seconds remaining
 }
+
+/**
+ * History entry for previous versions of an image.
+ */
+export interface HistoryEntry {
+  timestamp: string; // RFC3339Nano
+  url: string;       // URL or base64 for thumbnail
+}
+/**
+ * Parameters for a single-image Extras operation.
+ */
+export interface ExtrasParams {
+  operation: string;
+  image: string;
+}
+
+/**
+ * Parameters for batch Extras operations.
+ */
+export interface ExtrasBatchParams {
+  operations: string[];
+  images: string[];
+}
+
+/**
+ * Information about an available SD model.
+ */
+export interface ModelInfo {
+  name: string;
+}
+
+/**
+ * Request to switch SD model.
+ */
+export interface SwitchModelParams {
+  model: string;
+}
+
+/**
+ * Information about an available LoRA.
+ */
+export interface LoraInfo {
+  name: string;
+}

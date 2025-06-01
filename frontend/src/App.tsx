@@ -20,6 +20,7 @@ import {
 import Img2ImgPanel from './components/forge/Img2ImgPanel';
 import ExtrasPanel from './components/forge/ExtrasPanel';
 import RegionEditor from './components/forge/RegionEditor';
+import HistoryPanel from './components/forge/HistoryPanel';
 
 // Simple debounce util
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
@@ -85,17 +86,19 @@ const AppContent: React.FC = () => {
   const [showHiddenModal, setShowHiddenModal] = useState(false);
   // Directory management modal state
   const [showDirManagement, setShowDirManagement] = useState(false);
-  // Forge panels
+  // Forge panels state
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [addIndex, setAddIndex] = useState<number>(0);
   const [showImg2ImgPanel, setShowImg2ImgPanel] = useState(false);
   const [infillMode, setInfillMode] = useState(false);
   const [showRegionEditor, setShowRegionEditor] = useState(false);
   const [showExtrasPanel, setShowExtrasPanel] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   // Compute initImage URL for lightbox and editing panels
   const selectedMeta = selectedId ? images.find((img) => img.id === selectedId) : undefined;
   const initImage = selectedMeta
-    ? `${selectedMeta.url}?t=${encodeURIComponent(selectedMeta.timestamp)}&b=${bustMap[selectedMeta.id] || 0}`
+    ? `${selectedMeta.url}?t=${encodeURIComponent(selectedVersion || selectedMeta.timestamp)}&b=${bustMap[selectedMeta.id] || 0}`
     : '';
   // Handler when Add slot is clicked in ImageGrid
   const handleAddImage = (index: number) => {
@@ -378,6 +381,9 @@ const AppContent: React.FC = () => {
               <button onClick={() => setShowExtrasPanel(true)}>
                 Extras
               </button>
+              <button onClick={() => setShowHistoryPanel(true)}>
+                History
+              </button>
             </div>
             {descMode === 'text' ? (
               // Only show description panel if editing or if there's text to display
@@ -588,6 +594,20 @@ const AppContent: React.FC = () => {
                 refresh();
               }}
               onCancel={() => setShowExtrasPanel(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showHistoryPanel && (
+        <div className="modal-overlay" onClick={() => setShowHistoryPanel(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <HistoryPanel
+              imageID={selectedId!}
+              onSelect={(h) => {
+                setSelectedVersion(h.timestamp);
+                setShowHistoryPanel(false);
+              }}
+              onClose={() => setShowHistoryPanel(false)}
             />
           </div>
         </div>

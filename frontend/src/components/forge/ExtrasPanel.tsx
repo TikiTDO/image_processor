@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ImageResponse } from '../../types/forge';
-import { /* extras, extrasBatch */ } from '../../services/api';
+import { extras } from '../../services/api';
 import ProgressModal from './ProgressModal';
 
 interface ExtrasPanelProps {
@@ -15,11 +15,10 @@ const ExtrasPanel: React.FC<ExtrasPanelProps> = ({ initImage, onComplete, onCanc
 
   const handleRun = () => {
     setShowProgress(true);
-    // TODO: call extras or extrasBatch based on operation
-    // extras({ operation, image: initImage })
-    //   .then((resp) => onComplete?.(resp))
-    //   .catch((e) => console.error('Error running extras:', e))
-    //   .finally(() => setShowProgress(false));
+    extras({ operation, image: initImage })
+      .then((resp) => onComplete?.(resp))
+      .catch((e) => console.error('Error running extras:', e))
+      .finally(() => setShowProgress(false));
   };
 
   return (

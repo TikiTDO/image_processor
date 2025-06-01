@@ -40,9 +40,44 @@ type ProgressResponse struct {
    ETA          float32 `json:"eta_relative"`
 }
 
+// Extras parameters for single-image operations.
+type ExtrasParams struct {
+   Operation string `json:"operation"`
+   Image     string `json:"image"`
+}
+
+// ExtrasBatchParams for batch operations.
+type ExtrasBatchParams struct {
+   Operations []string `json:"operations"`
+   Images     []string `json:"images"`
+}
+
+// ModelInfo describes an available SD model.
+type ModelInfo struct {
+   Name string `json:"model_name"`
+}
+
+// LoraInfo describes an available LoRA.
+type LoraInfo struct {
+   Name string `json:"name"`
+}
+
+// HistoryEntry represents a past version entry.
+type HistoryEntry struct {
+   Timestamp string `json:"timestamp"`
+   Url       string `json:"url"`
+}
+
 // Client defines the interface for communicating with an SD-Forge server.
 type Client interface {
    Txt2Img(ctx context.Context, req *Txt2ImgRequest) (*ImageResponse, error)
    Img2Img(ctx context.Context, req *Img2ImgRequest) (*ImageResponse, error)
    Progress(ctx context.Context, skipCurrent bool) (*ProgressResponse, error)
+   Extras(ctx context.Context, operation string, image string) (*ImageResponse, error)
+   ExtrasBatch(ctx context.Context, operations []string, images []string) ([]ImageResponse, error)
+   Models(ctx context.Context) ([]ModelInfo, error)
+   SwitchModel(ctx context.Context, model string) error
+   Loras(ctx context.Context) ([]LoraInfo, error)
+   Ping(ctx context.Context) error
+   History(ctx context.Context, imageID string) ([]HistoryEntry, error)
 }

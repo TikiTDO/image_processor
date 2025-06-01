@@ -1,4 +1,5 @@
 import { fetchJson } from '../utils/fetchJson';
+import { Txt2ImgParams, Img2ImgParams, RegionEditParams, ImageResponse, ProgressResponse, HistoryEntry, ModelInfo, SwitchModelParams, LoraInfo } from '../types/forge';
 import {
   Txt2ImgParams,
   Img2ImgParams,
@@ -207,4 +208,70 @@ export async function regionEdit(params: RegionEditParams): Promise<ImageRespons
   });
   if (!res.ok) throw new Error(`regionEdit failed: ${res.status}`);
   return (await res.json()) as ImageResponse;
+}
+/**
+ * Single-image extra operations (GFPGAN, IP-Adapter, Depth Control).
+ */
+export async function extras(params: { operation: string; image: string }): Promise<ImageResponse> {
+  const res = await fetch('/api/v1/extras', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`extras failed: ${res.status}`);
+  return (await res.json()) as ImageResponse;
+}
+/**
+ * Batch extra operations (for IP-Adapter, etc.).
+ */
+export async function extrasBatch(params: { operations: string[]; images: string[] }): Promise<ImageResponse[]> {
+  const res = await fetch('/api/v1/extras/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`extrasBatch failed: ${res.status}`);
+  return (await res.json()) as ImageResponse[];
+}
+/**
+ * Fetch history of previous versions for a given image ID.
+ */
+export async function getHistory(id: string): Promise<HistoryEntry[]> {
+  const res = await fetch(`/api/v1/history?imageID=${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`getHistory failed: ${res.status}`);
+  return (await res.json()) as { timestamp: string; url: string }[];
+}
+/**
+ * Fetch available SD models.
+ */
+export async function getModels(): Promise<ModelInfo[]> {
+  const res = await fetch('/api/v1/models');
+  if (!res.ok) throw new Error(`getModels failed: ${res.status}`);
+  return (await res.json()) as ModelInfo[];
+}
+/**
+ * Switch the current SD model.
+ */
+export async function switchModel(params: SwitchModelParams): Promise<void> {
+  const res = await fetch('/api/v1/models/switch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`switchModel failed: ${res.status}`);
+}
+/**
+ * Fetch available LoRAs.
+ */
+export async function getLoras(): Promise<LoraInfo[]> {
+  const res = await fetch('/api/v1/loras');
+  if (!res.ok) throw new Error(`getLoras failed: ${res.status}`);
+  return (await res.json()) as LoraInfo[];
+}
+/**
+ * Ping the SD-Forge server for health.
+ */
+export async function ping(): Promise<void> {
+  const res = await fetch('/api/v1/ping');
+  if (!res.ok) throw new Error(`ping failed: ${res.status}`);
 }

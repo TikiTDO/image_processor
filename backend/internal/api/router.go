@@ -86,6 +86,17 @@ func SetupRouter() *gin.Engine {
        v1.POST("/img2img", handleImg2Img)
        v1.GET("/progress", handleProgress)
        v1.POST("/regions", handleRegions)
+       // Extras
+       v1.POST("/extras", handleExtras)
+       v1.POST("/extras/batch", handleExtrasBatch)
+       // Models & LoRAs
+       v1.GET("/models", handleGetModels)
+       v1.POST("/models/switch", handleSwitchModel)
+       v1.GET("/loras", handleGetLoras)
+       // Ping
+       v1.GET("/ping", handlePing)
+       // History
+       v1.GET("/history", handleGetHistory)
    }
    return r
 }
