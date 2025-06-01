@@ -67,16 +67,16 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
         );
       })}
     </button>
-    <div className="segmented-control">
-      <button className={mode === 'view' ? 'active' : ''} onClick={() => onModeChange('view')}>
+    <div className="mode-switcher">
+      <span className={`mode-option${mode === 'view' ? ' active' : ''}`} onClick={() => onModeChange('view')}>
         View
-      </button>
-      <button className={mode === 'dialog' ? 'active' : ''} onClick={() => onModeChange('dialog')}>
+      </span>
+      <span className={`mode-option${mode === 'dialog' ? ' active' : ''}`} onClick={() => onModeChange('dialog')}>
         Edit Dialogs
-      </button>
-      <button className={mode === 'image' ? 'active' : ''} onClick={() => onModeChange('image')}>
+      </span>
+      <span className={`mode-option${mode === 'image' ? ' active' : ''}`} onClick={() => onModeChange('image')}>
         Edit Images
-      </button>
+      </span>
     </div>
     <button onClick={onShowHidden}>
       Hidden Images ({hiddenCount})

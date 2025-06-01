@@ -369,8 +369,9 @@ const AppContent: React.FC = () => {
           <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
             {/* Display selected image */}
             <img src={initImage} alt={selectedId || 'Enlarged'} />
-            {/* Editing tools */}
-            <div className="lightbox-tools">
+            {/* Mode-specific controls */}
+            {mode === 'image' && (
+              <div className="lightbox-tools">
               <button onClick={() => { setInfillMode(false); setShowImg2ImgPanel(true); }}>
                 Full Edit
               </button>
@@ -387,6 +388,7 @@ const AppContent: React.FC = () => {
                 History
               </button>
             </div>
+            )}
             {descMode === 'text' ? (
               // Only show description panel if editing or if there's text to display
               (mode === 'dialog' || rawDescription.length > 0) ? (

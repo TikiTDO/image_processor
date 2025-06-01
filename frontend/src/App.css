@@ -18,6 +18,10 @@ html.theme-light {
   --btn-hover-bg: #e0e0e0;
   --control-bg: var(--btn-bg);
   --control-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Mode toggle colors */
+  --mode-dialog-color: #ff9800;
+  --mode-image-color: #0088ff;
+  --mode-view-color: var(--btn-fg);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -27,6 +31,10 @@ html.theme-light {
     --btn-hover-bg: #444;
     --control-bg: #111;
     --control-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+    /* Mode toggle colors (dark) */
+    --mode-dialog-color: #ffb74d;
+    --mode-image-color: #6ec6ff;
+    --mode-view-color: var(--btn-fg);
   }
 }
 .zoom-number-btn:hover {
@@ -131,32 +139,45 @@ html.theme-light {
     box-shadow: 0 2px 4px rgba(0, 123, 255, 0.5);
   }
 }
-/* Segmented control for UI modes */
-.segmented-control {
+/* View mode header shadow color */
+.controls.mode-view {
+  box-shadow: 0 2px 4px var(--mode-view-color);
+}
+@media (prefers-color-scheme: dark) {
+  .controls.mode-view {
+    box-shadow: 0 2px 4px var(--mode-view-color);
+  }
+}
+/* Mode switcher (text tabs) */
+/* Mode switcher styled as button group */
+.mode-switcher {
   display: inline-flex;
+  background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   border-radius: 6px;
-  overflow: hidden;
   margin: 0 4px;
 }
-.segmented-control button {
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  border: none;
+.mode-switcher .mode-option {
   padding: 6px 12px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
   font-size: 0.9em;
+  color: var(--btn-fg);
+  transition: color 0.2s, font-weight 0.2s;
 }
-.segmented-control button + button {
+.mode-switcher .mode-option + .mode-option {
   border-left: 1px solid var(--btn-border);
 }
-.segmented-control button:hover,
-.segmented-control button.active {
-  background: var(--btn-hover-bg);
+.controls.mode-dialog .mode-switcher .mode-option.active {
+  color: var(--mode-dialog-color);
+  font-weight: bold;
 }
-.segmented-control button:focus {
-  outline: none;
+.controls.mode-image .mode-switcher .mode-option.active {
+  color: var(--mode-image-color);
+  font-weight: bold;
+}
+.controls.mode-view .mode-switcher .mode-option.active {
+  color: var(--mode-view-color);
+  font-weight: bold;
 }
 /* Shared styling for header, path picker, and zoom control buttons */
 .controls button,
