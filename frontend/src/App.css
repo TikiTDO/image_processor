@@ -10,6 +10,25 @@ html.theme-dark canvas {
 html.theme-light {
   filter: none;
 }
+/* Theme-aware button variables */
+:root {
+  --btn-bg: #f0f0f0;
+  --btn-fg: #333;
+  --btn-border: #ccc;
+  --btn-hover-bg: #e0e0e0;
+  --control-bg: var(--btn-bg);
+  --control-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --btn-bg: #333;
+    --btn-fg: #eee;
+    --btn-border: #555;
+    --btn-hover-bg: #444;
+    --control-bg: #111;
+    --control-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+  }
+}
 .zoom-number-btn:hover {
   background: #e0e0e0;
 }
@@ -95,6 +114,50 @@ html.theme-light {
     box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
   }
 }
+/* Shared styling for header, path picker, and zoom control buttons */
+.controls button,
+.path-btn,
+.zoom-btn,
+.zoom-number-btn {
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-fg, #333);
+  border: 1px solid var(--btn-border, #ccc);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 0 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+/* Hover state for shared buttons */
+.controls button:hover,
+.path-btn:hover,
+.zoom-btn:hover,
+.zoom-number-btn:hover {
+  background: var(--btn-hover-bg, #e0e0e0);
+}
+/* Theme toggle stays at end */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  margin-left: auto;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+/* Zoom button overrides */
+.zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+}
+/* Zoom number button overrides */
+.zoom-number-btn {
+  border-radius: 25px;
+  padding: 8px 16px;
+  min-width: 60px;
+  height: 44px;
+}
 /* Path picker styling */
 .path-picker {
   position: relative;
@@ -139,16 +202,18 @@ html.theme-light {
   text-shadow: 0 0 4px rgba(255,255,255,0.7);
 }
 .path-btn {
-  background: #f0f0f0;
-  border: 1px solid #ccc;
+  /* styled as shared control button */
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-fg, #333);
+  border: 1px solid var(--btn-border, #ccc);
   border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 1em;
+  padding: 6px 12px;
+  font-size: 0.9em;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, border 0.2s;
 }
 .path-btn:hover {
-  background: #e0e0e0;
+  background: var(--btn-hover-bg, #e0e0e0);
 }
 .path-dropdown {
   position: absolute;
@@ -183,27 +248,28 @@ html.theme-light {
   font-size: 1em;
 }
 /* Zoom buttons styling */
-/* Zoom control buttons: circular */
+/* Zoom control buttons: styled with shared button variables */
 .zoom-btn {
   width: 44px;
   height: 44px;
-  background: #f0f0f0;
-  border: none;
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-fg, #333);
+  border: 1px solid var(--btn-border, #ccc);
   border-radius: 50%;
-  font-size: 1.5em;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
-  color: #333;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-size: 1.5em;
+  line-height: 1;
+  padding: 0;
 }
 .zoom-btn:hover {
-  background: #e0e0e0;
+  background: var(--btn-hover-bg, #e0e0e0);
 }
 .zoom-btn:active {
-  background: #d0d0d0;
+  background: var(--btn-hover-bg, #d0d0d0);
 }
 @media (prefers-color-scheme: dark) {
   .zoom-btn {
@@ -346,9 +412,9 @@ body {
 }
 /* Central zoom number button */
 .zoom-number-btn {
-  background: #f0f0f0;
-  color: #333;
-  border: none;
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-fg, #333);
+  border: 1px solid var(--btn-border, #ccc);
   border-radius: 25px;
   padding: 8px 16px;
   min-width: 60px;
@@ -359,10 +425,10 @@ body {
   justify-content: center;
   cursor: pointer;
   margin: 0 8px;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, border 0.2s;
 }
 .zoom-number-btn:hover {
-  background: #e0e0e0;
+  background: var(--btn-hover-bg, #e0e0e0);
 }
 /* Slider menu backdrop covers entire screen to capture clicks */
 /* Slider menu panel */

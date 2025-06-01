@@ -87,7 +87,13 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }
   };
 
-  // No hoverIndex; per-item add overlays will handle before/after add
+  // Reset hover overlay when exiting add mode
+  React.useEffect(() => {
+    if (!addMode) {
+      setHoveredIndex(null);
+      setHoveredSide(null);
+    }
+  }, [addMode]);
   // Previews for first dialog line provided by parent (if any)
 
   return (
