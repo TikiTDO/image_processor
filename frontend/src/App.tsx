@@ -388,115 +388,93 @@ const AppContent: React.FC = () => {
                 History
               </button>
             </div>
+            {/* Mode-driven sidebar: view vs dialog */}
+            {mode === 'view' && selectedDialog.length > 0 && (
+              <div className="dialog-sidebar">
+                <div className="dialog-read">
+                  {selectedDialog.map((line, idx) => {
+                    const parts = line.split(':');
+                    const speakerId = Number(parts[0]);
+                    const text = parts.slice(1).join(':');
+                    return (
+                      <div key={idx} className="dialog-line">
+                        {speakerId !== 0 && (
+                          <span className="speaker-name" style={{ color: speakerColors[speakerId] || '#000' }}>
+                            {speakerNames[speakerId] || ''}
+                          </span>
+                        )}
+                        <span className="dialog-text" style={{ color: speakerColors[speakerId] || '#000' }}>
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-            {descMode === 'text' ? (
-              // Only show description panel if editing or if there's text to display
-              (mode === 'dialog' || rawDescription.length > 0) ? (
-                <div className="description-panel">
-                  <pre className="description-text">{rawDescription}</pre>
+            {mode === 'dialog' && (
+              <div className="dialog-sidebar">
+                <div className="dialog-edit">
+                  {selectedDialog.map((line, idx) => {
+                    const parts = line.split(':');
+                    const speakerId = Number(parts[0]);
+                    const text = parts.slice(1).join(':');
+                    return (
+                      <div key={idx} className="dialog-edit-card">
+                        <div className="dialog-edit-card-header">
+                          {Object.entries(speakerNames).map(([key, name]) => {
+                            const id = Number(key);
+                            const isSelected = id === speakerId;
+                            return (
+                              <button
+                                key={key}
+                                className={`speaker-button${isSelected ? ' selected' : ''}`}
+                                style={{ backgroundColor: speakerColors[id] || '#ccc' }}
+                                onClick={() => {
+                                  const newDialog = [...selectedDialog];
+                                  newDialog[idx] = `${id}:${text}`;
+                                  setSelectedDialog(newDialog);
+                                  saveDialogDebounced(newDialog);
+                                }}
+                              >
+                                {name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="dialog-edit-card-body">
+                          <textarea
+                            className="dialog-textarea"
+                            value={text}
+                            onChange={(e) => {
+                              const newText = e.currentTarget.value;
+                              const newDialog = [...selectedDialog];
+                              newDialog[idx] = `${speakerId}:${newText}`;
+                              setSelectedDialog(newDialog);
+                              saveDialogDebounced(newDialog);
+                            }}
+                            onInput={(e) => {
+                              const t = e.currentTarget;
+                              t.style.height = 'auto';
+                              t.style.height = t.scrollHeight + 'px';
+                            }}
+                            style={{ height: 'auto', overflow: 'hidden', resize: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                   <button
-                    className="dialog-toggle"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const initDialog = rawDescription ? [rawDescription] : [];
-                      setSelectedDialog(initDialog);
-                      setImageDialog(selectedId, initDialog, path);
-                      setDescMode('dialog');
+                      const newDialog = [...selectedDialog, '0:'];
+                      setSelectedDialog(newDialog);
+                      saveDialogDebounced(newDialog);
                     }}
                   >
-                    Switch to dialog mode
+                    + Add Line
                   </button>
                 </div>
-              ) : null
-            ) : (
-              <div className="dialog-sidebar">
-                {/* Global edit mode: show edit fields when enabled, otherwise read-only */}
-                {mode !== 'dialog' ? (
-                  <div className="dialog-read">
-                    {selectedDialog.map((line, idx) => {
-                      const parts = line.split(':');
-                      const speakerId = Number(parts[0]);
-                      const text = parts.slice(1).join(':');
-                      return (
-                        <div key={idx} className="dialog-line">
-                          {speakerId !== 0 && (
-                            <span className="speaker-name" style={{ color: speakerColors[speakerId] || '#000' }}>
-                              {speakerNames[speakerId] || ''}
-                            </span>
-                          )}
-                      <span
-                        className="dialog-text"
-                        style={{ color: speakerColors[speakerId] || '#000' }}
-                      >
-                        {text}
-                      </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="dialog-edit">
-                    {selectedDialog.map((line, idx) => {
-                      const parts = line.split(':');
-                      const speakerId = Number(parts[0]);
-                      const text = parts.slice(1).join(':');
-                      return (
-                        <div key={idx} className="dialog-edit-card">
-                          <div className="dialog-edit-card-header">
-                            {Object.entries(speakerNames).map(([key, name]) => {
-                              const id = Number(key);
-                              const isSelected = id === speakerId;
-                              return (
-                                <button
-                                  key={key}
-                                  className={`speaker-button${isSelected ? ' selected' : ''}`}
-                                  style={{ backgroundColor: speakerColors[id] || '#ccc' }}
-                                  onClick={() => {
-                                    const newDialog = [...selectedDialog];
-                                    newDialog[idx] = `${id}:${text}`;
-                                    setSelectedDialog(newDialog);
-                                    saveDialogDebounced(newDialog);
-                                  }}
-                                >
-                                  {name}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <div className="dialog-edit-card-body">
-                            <textarea
-                              className="dialog-textarea"
-                              value={text}
-                              onChange={(e) => {
-                                const newText = e.target.value;
-                                const newDialog = [...selectedDialog];
-                                newDialog[idx] = `${speakerId}:${newText}`;
-                                setSelectedDialog(newDialog);
-                                saveDialogDebounced(newDialog);
-                              }}
-                              onInput={(e) => {
-                                const t = e.currentTarget;
-                                t.style.height = 'auto';
-                                t.style.height = t.scrollHeight + 'px';
-                              }}
-                              style={{ height: 'auto', overflow: 'hidden', resize: 'none', width: '100%' }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newDialog = [...selectedDialog, '0:'];
-                        setSelectedDialog(newDialog);
-                        saveDialogDebounced(newDialog);
-                      }}
-                    >
-                      + Add Line
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>
