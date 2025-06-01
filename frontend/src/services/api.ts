@@ -5,7 +5,9 @@ import {
   RegionEditParams,
   ImageResponse,
   ProgressResponse,
+  SwitchModelParams,
 } from '../types/forge';
+import { HistoryEntry, LoraInfo, ModelInfo } from '../api';
 
 // Metadata for an image
 export interface ImageMeta {

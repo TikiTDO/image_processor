@@ -25,13 +25,19 @@ import { request as __request } from '../core/request';
 export class DefaultService {
 
     /**
+     * @param path
      * @returns ImageMeta List of image metadata
      * @throws ApiError
      */
-    public static getImages(): CancelablePromise<Array<ImageMeta>> {
+    public static getImages(
+        path?: string,
+    ): CancelablePromise<Array<ImageMeta>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/images',
+            query: {
+                'path': path,
+            },
         });
     }
 

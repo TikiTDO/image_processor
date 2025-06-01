@@ -1,5 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useGetImagesQuery, useGetDialogsQuery, ImageMeta } from '../api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { DefaultService, type ImageMeta } from '../api';
 import { useSSE } from './useSSE';
 
 /**
@@ -13,13 +13,15 @@ import { useSSE } from './useSSE';
 export function useImages(path: string) {
   const queryClient = useQueryClient();
 
-  const imagesQuery = useGetImagesQuery({ path }, { keepPreviousData: true });
-  const dialogsQuery = useGetDialogsQuery({ path });
+  const imagesKey = ['images', path] as const;
+  const dialogsKey = ['dialogs', path] as const;
 
-  // Invalidate generated queries on SSE updates
+  const imagesQuery = useQuery(imagesKey, () => DefaultService.getImages(path));
+  const dialogsQuery = useQuery(dialogsKey, () => DefaultService.getDialogs(path));
+
   useSSE('/api/updates', () => {
-    queryClient.invalidateQueries(imagesQuery.queryKey);
-    queryClient.invalidateQueries(dialogsQuery.queryKey);
+    void queryClient.invalidateQueries(imagesKey);
+    void queryClient.invalidateQueries(dialogsKey);
   });
 
   return {
@@ -27,8 +29,7 @@ export function useImages(path: string) {
     dialogs: dialogsQuery.data?.dialogs ?? {},
     refresh: imagesQuery.refetch,
     refreshDialogs: dialogsQuery.refetch,
-    // Allow optimistic updates by setting new data
     setImages: (updater: ImageMeta[] | ((old?: ImageMeta[]) => ImageMeta[])) =>
-      queryClient.setQueryData(imagesQuery.queryKey, updater),
+      queryClient.setQueryData(imagesKey, updater),
   };
 }
