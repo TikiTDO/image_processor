@@ -52,6 +52,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   dialogPreviewMap,
 }) => {
   const isDragging = useRef(false);
+  // Hover state for Add Mode overlays
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hoveredSide, setHoveredSide] = useState<'before' | 'after' | null>(null);
   const sensors = useSensors(
     // Pointer sensor for mouse and pen input, with minimum drag distance
     useSensor(PointerSensor, {
@@ -84,9 +87,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }
   };
 
-  // Add-mode overlay index
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
+  // No hoverIndex; per-item add overlays will handle before/after add
   // Previews for first dialog line provided by parent (if any)
 
   return (
@@ -107,53 +108,47 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       }}
     >
       <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
-        <div
-          className="grid"
-          ref={gridRef}
-          onMouseMove={(e) => {
-            if (!addMode || !onAddImage) return;
-            const rect = gridRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const x = e.clientX - rect.left;
-            const cell = zoomLevel + 10; // item size + gap
-            let idx = Math.floor(x / cell) + 1;
-            if (idx < 0) idx = 0;
-            if (idx > images.length) idx = images.length;
-            setHoverIndex(idx);
-          }}
-          onMouseLeave={() => setHoverIndex(null)}
-        >
-          {images.map((img) => (
-            <SortableItem
-              key={`${img.id}-${img.timestamp}`}
-              id={img.id}
-              url={img.url}
-              size={zoomLevel}
-              dialogLine={dialogPreviewMap?.[img.id] || ''}
-              onClick={() => { if (!isDragging.current) onItemClick(img.id); }}
-              onRemove={() => onRemoveImage && onRemoveImage(img.id)}
-              onHide={() => onHideImage && onHideImage(img.id)}
-            />
-          ))}
-          {addMode && hoverIndex !== null && (
+        <div className="grid">
+          {images.map((img, idx) => (
             <div
-              className="add-slot"                
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: `${hoverIndex * (zoomLevel + 10) - zoomLevel / 2}px`,
-                width: zoomLevel,
-                height: zoomLevel,
-                pointerEvents: 'none',
+              key={img.id}
+              style={{ position: 'relative' }}
+              onMouseMove={(e) => {
+                if (!addMode || !onAddImage) return;
+                const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                const relX = e.clientX - rect.left;
+                const side: 'before' | 'after' = relX < rect.width / 2 ? 'before' : 'after';
+                setHoveredIndex(idx);
+                setHoveredSide(side);
+              }}
+              onMouseLeave={() => {
+                setHoveredIndex(null);
+                setHoveredSide(null);
               }}
             >
-              <div
-                className="add-circle"
-                style={{ pointerEvents: 'auto', position: 'relative', top: '50%', transform: 'translateY(-50%)' }}
-                onClick={() => onAddImage(hoverIndex)}
+              <SortableItem
+                id={img.id}
+                url={img.url}
+                size={zoomLevel}
+                dialogLine={dialogPreviewMap?.[img.id] || ''}
+                onClick={() => { if (!isDragging.current) onItemClick(img.id); }}
+                onRemove={() => onRemoveImage && onRemoveImage(img.id)}
+                onHide={() => onHideImage && onHideImage(img.id)}
               />
+              {addMode && onAddImage && hoveredIndex === idx && hoveredSide === 'before' && (
+                <div
+                  className="add-overlay add-before"
+                  onClick={() => onAddImage(idx)}
+                />
+              )}
+              {addMode && onAddImage && hoveredIndex === idx && hoveredSide === 'after' && (
+                <div
+                  className="add-overlay add-after"
+                  onClick={() => onAddImage(idx + 1)}
+                />
+              )}
             </div>
-          )}
+          ))}
         </div>
       </SortableContext>
     </DndContext>

@@ -54,7 +54,7 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
       onZoomChange={onZoomChange}
     />
     <PathPicker path={path} onChange={onPathChange} />
-    <button className="speaker-config-btn" onClick={onShowSpeakerConfig}>
+    <button onClick={onShowSpeakerConfig}>
       {Object.entries(speakerNames).map(([key, name]) => {
         const id = Number(key);
         const isNarrator = id === 0;
@@ -69,19 +69,19 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
         );
       })}
     </button>
-    <button className="edit-mode-btn" onClick={onToggleEditMode}>
+    <button onClick={onToggleEditMode}>
       {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
     </button>
-    <button className="add-mode-btn" onClick={onToggleAddMode}>
+    <button onClick={onToggleAddMode}>
       {addMode ? 'Exit Add Mode' : 'Enter Add Mode'}
     </button>
-    <button className="edit-mode-btn" onClick={onShowHidden}>
+    <button onClick={onShowHidden}>
       Hidden Images ({hiddenCount})
     </button>
-    <button className="image-count-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
       {imageCount} Images
     </button>
-    <button className="image-count-btn" onClick={onShowDirManagement}>
+    <button onClick={onShowDirManagement}>
       Manage Directory
     </button>
     <button className="theme-toggle-btn" onClick={onToggleTheme} title={`Theme: ${theme}`}>

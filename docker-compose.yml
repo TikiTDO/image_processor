@@ -46,6 +46,7 @@ services:
     environment:
       # Point frontend to backend container on port 5700
       - BACKEND_URL=https://backend:5700
+      - FORGE_SERVER_URL=http://airia.home:7861
     depends_on:
       - backend
     # Install dependencies and start development server via npm

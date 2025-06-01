@@ -72,6 +72,8 @@ html.theme-light {
   gap: 10px;
   padding: 0;
   margin: 0 auto;
+  /* Positioning context for add-slot overlays */
+  position: relative;
 }
 /* Controls bar at top for zoom and path selection */
 .controls {
@@ -97,6 +99,44 @@ html.theme-light {
 .path-picker {
   position: relative;
   display: inline-block;
+}
+/* Add slot indicator for Add Mode in ImageGrid */
+/* Add before/after overlays for Add Mode in ImageGrid */
+.add-overlay {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 20;
+}
+.add-overlay.add-before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    rgba(0, 123, 255, 0.5) 0%,
+    rgba(0, 123, 255, 0) 100%
+  );
+}
+.add-overlay.add-after {
+  left: 50%;
+  background: linear-gradient(
+    to left,
+    rgba(0, 123, 255, 0.5) 0%,
+    rgba(0, 123, 255, 0) 100%
+  );
+}
+.add-overlay::after {
+  content: '+';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2em;
+  font-weight: bold;
+  color: rgba(0, 123, 255, 0.9);
+  text-shadow: 0 0 4px rgba(255,255,255,0.7);
 }
 .path-btn {
   background: #f0f0f0;
@@ -136,22 +176,6 @@ html.theme-light {
 }
 .path-dropdown li:hover {
   background: #f5f5f5;
-}
-/* Speaker config button: show speaker names in colors */
-.speaker-config-btn {
-  background: #f0f0f0;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  font-size: 1em;
-}
-.speaker-config-btn:hover {
-  background: #e0e0e0;
 }
 .controls input {
   width: 200px;
@@ -407,19 +431,6 @@ body {
 .dialog-sidebar:empty {
   display: none;
 }
-/* Edit mode toggle: pill-shaped button */
-.edit-mode-btn {
-  background: #f0f0f0;
-  border: none;
-  border-radius: 50px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-size: 1em;
-  transition: background 0.2s;
-}
-.edit-mode-btn:hover {
-  background: #e0e0e0;
-}
 @media (prefers-color-scheme: dark) {
   /* Dark mode: strong dark background with light text/border */
   .dialog-toggle {
@@ -587,49 +598,6 @@ body {
   border-color: #000;
 }
 
-/* Image count button styling */
-.image-count-btn {
-  background: #f0f0f0;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  margin-left: 8px;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-/* Theme toggle button */
-.theme-toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2em;
-  margin-left: auto; /* align to far right */
-}
-.image-count-btn:hover {
-  background: #e0e0e0;
-}
-@media (prefers-color-scheme: dark) {
-  /* Header buttons dark mode */
-  .speaker-config-btn,
-  .edit-mode-btn,
-  .image-count-btn {
-    background: #333;
-    color: #eee;
-  }
-  .speaker-config-btn:hover,
-  .edit-mode-btn:hover,
-  .image-count-btn:hover {
-    background: #444;
-  }
-  /* Narrator name styling */
-  .narrator-name {
-    color: #aaa !important;
-  }
-  .image-count-btn {
-    background: #444;
-  }
-}
 
 /* Narrator name styling in light mode */
 .narrator-name {
