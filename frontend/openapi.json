@@ -28,6 +28,27 @@
       }
     }
   },
+    "/api/path": {
+      "get": {
+        "operationId": "getDefaultPath",
+        "responses": {
+          "200": {
+            "description": "Default path response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" }
+                  },
+                  "required": ["path"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   "components": {
     "schemas": {
       "ImageMeta": {

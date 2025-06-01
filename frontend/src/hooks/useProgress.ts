@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { ProgressResponse, getProgress } from '../services/api';
+import { useGetProgressQuery, ProgressResponse } from '../api';
 
 /**
  * Hook to fetch SD-Forge progress data with automatic 1s polling.
@@ -13,17 +12,13 @@ import { ProgressResponse, getProgress } from '../services/api';
 export function useProgress(
   skipCurrent: boolean = false
 ): { data: ProgressResponse | null; error: Error | null; loading: boolean } {
-  const query = useQuery<ProgressResponse, Error>(
-    ['progress', skipCurrent],
-    () => getProgress(skipCurrent),
-    {
-      refetchInterval: 1000,
-      keepPreviousData: true,
-    }
+  const {
+    data = null,
+    error = null,
+    isLoading: loading,
+  } = useGetProgressQuery(
+    { skipCurrent },
+    { refetchInterval: 1000, keepPreviousData: true }
   );
-  return {
-    data: query.data || null,
-    error: query.error || null,
-    loading: query.isLoading,
-  };
+  return { data, error, loading };
 }

@@ -1,56 +1,34 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QueryObserverResult } from '@tanstack/react-query';
-import { getImages, getImageDialogs, ImageMeta } from '../services/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useGetImagesQuery, useGetDialogsQuery, ImageMeta } from '../api';
 import { useSSE } from './useSSE';
 
 /**
  * Hook to manage images list and dialogs cache for a given directory path.
  * NOTE: Ensure ImageMeta and dialog types here match the backend /api/images and /api/dialogs endpoints.
  */
-export function useImages(
-  path: string
-): {
-  images: ImageMeta[];
-  dialogs: Record<string, string[]>;
-  refresh: () => Promise<QueryObserverResult<ImageMeta[], Error>>;
-  refreshDialogs: () => Promise<QueryObserverResult<Record<string, string[]>, Error>>;
-  setImages: (
-    updater: ImageMeta[] | ((old?: ImageMeta[]) => ImageMeta[])
-  ) => void;
-} {
+/**
+ * Hook to fetch image metadata and dialogs for a given path using generated React Query hooks.
+ * Ensure the OpenAPI spec remains in sync with the backend endpoints.
+ */
+export function useImages(path: string) {
   const queryClient = useQueryClient();
 
-  const {
-    data: images = [],
-    refetch: refetchImages,
-  } = useQuery<ImageMeta[], Error>(
-    ['images', path],
-    () => getImages(path),
-    { keepPreviousData: true }
-  );
+  const imagesQuery = useGetImagesQuery({ path }, { keepPreviousData: true });
+  const dialogsQuery = useGetDialogsQuery({ path });
 
-  const {
-    data: dialogs = {},
-    refetch: refetchDialogs,
-  } = useQuery<Record<string, string[]>, Error>(
-    ['dialogs', path],
-    () => getImageDialogs(path)
-  );
-
-  // Invalidate queries on server-sent events updates
+  // Invalidate generated queries on SSE updates
   useSSE('/api/updates', () => {
-    queryClient.invalidateQueries(['images', path]);
-    queryClient.invalidateQueries(['dialogs', path]);
+    queryClient.invalidateQueries(imagesQuery.queryKey);
+    queryClient.invalidateQueries(dialogsQuery.queryKey);
   });
 
   return {
-    images,
-    dialogs,
-    refresh: refetchImages,
-    refreshDialogs: refetchDialogs,
-    // Allow manual override or updater function for optimistic updates
-    setImages: (
-      updater: ImageMeta[] | ((old: ImageMeta[] | undefined) => ImageMeta[])
-    ) => queryClient.setQueryData<ImageMeta[]>(['images', path], updater),
+    images: imagesQuery.data ?? [],
+    dialogs: dialogsQuery.data?.dialogs ?? {},
+    refresh: imagesQuery.refetch,
+    refreshDialogs: dialogsQuery.refetch,
+    // Allow optimistic updates by setting new data
+    setImages: (updater: ImageMeta[] | ((old?: ImageMeta[]) => ImageMeta[])) =>
+      queryClient.setQueryData(imagesQuery.queryKey, updater),
   };
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
@@ -14,12 +14,8 @@ import ErrorOverlay from './components/ErrorOverlay';
 import ScrollToTop from './components/ScrollToTop';
 import HeaderControls from './components/HeaderControls';
 import DirectoryManagementModal from './components/DirectoryManagementModal';
-import {
-  uploadImages,
-  setImageDialog,
-  getDefaultPath,
-  getImages,
-} from './services/api';
+import { useGetDefaultPathQuery, useSetImageDialogMutation } from './api';
+import { uploadImages } from './services/api';
 import Img2ImgPanel from './components/forge/Img2ImgPanel';
 import ExtrasPanel from './components/forge/ExtrasPanel';
 import RegionEditor from './components/forge/RegionEditor';
@@ -158,17 +154,11 @@ const AppContent: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, images]);
-  // Mutation for saving dialog entries
-  const queryClient = useQueryClient();
-  const dialogMutation = useMutation<
-    void,
-    Error,
-    { id: string; dialog: string[] }
-  >({
-    mutationFn: ({ id, dialog }) => setImageDialog(id, dialog, path),
+  // Mutation for saving dialog entries via generated hook
+  const setDialogMutation = useSetImageDialogMutation({
     onSuccess: () => {
       queryClient.invalidateQueries(['dialogs', path]);
-    },
+    }
   });
   // Debounced save for dialog edits (1s)
   const saveDialogDebounced = useMemo(
@@ -180,14 +170,10 @@ const AppContent: React.FC = () => {
     [dialogMutation]
   );
 
-  // Fetch default path when none is set
-  const { data: defaultPath = '' } = useQuery<string, Error>(
-    ['defaultPath'],
-    () => getDefaultPath(),
-    { enabled: path === '' }
-  );
+  // Fetch default path when none is set via generated hook
+  const { data: defaultPath = '' } = useGetDefaultPathQuery(undefined, { enabled: path === '' });
   useEffect(() => {
-    if (defaultPath !== undefined && path === '') {
+    if (path === '' && defaultPath) {
       setPath(defaultPath);
     }
   }, [defaultPath, path]);
@@ -560,12 +546,12 @@ const AppContent: React.FC = () => {
                   const oldIDs = images.map((img) => img.id);
                   // Upload generated images to server
                   await uploadImages(path, files);
-                  // Fetch updated list
-                  const updated = await getImages(path);
-                  // Identify new entries
+                  // Refresh images via React Query cache and get new entries
+                  await refresh();
+                  const updated = images; // updated images from useImages hook
                   const newEntries = updated.filter((img) => !oldIDs.includes(img.id));
                   // Insert new entries at clicked index
-                  setImages((prev) => {
+                  setImages((prev = []) => {
                     const copy = [...prev];
                     copy.splice(addIndex, 0, ...newEntries);
                     return copy;
