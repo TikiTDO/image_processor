@@ -3,6 +3,7 @@ import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
 import { SpeakerProvider, useSpeakerContext } from './context/SpeakerContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import PathPicker from './components/PathPicker';
 import ZoomControls from './components/ZoomControls';
 import ImageGrid from './components/ImageGrid';
@@ -16,6 +17,7 @@ import {
   uploadImages,
   setImageDialog,
   getDefaultPath,
+  getImages,
 } from './services/api';
 import Img2ImgPanel from './components/forge/Img2ImgPanel';
 import ExtrasPanel from './components/forge/ExtrasPanel';
@@ -96,6 +98,8 @@ const AppContent: React.FC = () => {
   const [showExtrasPanel, setShowExtrasPanel] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  // Cache buster map: increment to force image refetch for specific IDs
+  const [bustMap, setBustMap] = useState<Record<string, number>>({});
   // Compute initImage URL for lightbox and editing panels
   const selectedMeta = selectedId ? images.find((img) => img.id === selectedId) : undefined;
   const initImage = selectedMeta
@@ -154,8 +158,6 @@ const AppContent: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, images]);
-  // Cache buster map: increment to force image refetch for specific IDs
-  const [bustMap, setBustMap] = useState<Record<string, number>>({});
   // Debounced save for dialog edits (1s)
   const saveDialogDebounced = useMemo(
     () => debounce((dlg: string[]) => {
@@ -347,7 +349,6 @@ const AppContent: React.FC = () => {
         }}
         onItemClick={toggleLightbox}
         addMode={addMode}
-        onAddImage={(index) => { setAddIndex(index); setShowAddPanel(true); }}
         onAddImage={handleAddImage}
         onRemoveImage={removeImage}
         onHideImage={hideImage}
@@ -550,9 +551,39 @@ const AppContent: React.FC = () => {
         <div className="modal-overlay" onClick={() => setShowAddPanel(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <Txt2ImgPanel
-              onComplete={() => {
-                setShowAddPanel(false);
-                refresh();
+              onComplete={async (resp) => {
+                try {
+                  // Convert generated base64 images to File objects
+                  const files = await Promise.all(
+                    resp.images.map(async (imgB64, idx) => {
+                      const dataUrl = imgB64.startsWith('data:')
+                        ? imgB64
+                        : `data:image/png;base64,${imgB64}`;
+                      const res = await fetch(dataUrl);
+                      const blob = await res.blob();
+                      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                      const filename = `${timestamp}-${idx}.png`;
+                      return new File([blob], filename, { type: 'image/png' });
+                    })
+                  );
+                  const oldIDs = images.map((img) => img.id);
+                  // Upload generated images to server
+                  await uploadImages(path, files);
+                  // Fetch updated list
+                  const updated = await getImages(path);
+                  // Identify new entries
+                  const newEntries = updated.filter((img) => !oldIDs.includes(img.id));
+                  // Insert new entries at clicked index
+                  setImages((prev) => {
+                    const copy = [...prev];
+                    copy.splice(addIndex, 0, ...newEntries);
+                    return copy;
+                  });
+                } catch (e) {
+                  console.error('Error uploading generated images:', e);
+                } finally {
+                  setShowAddPanel(false);
+                }
               }}
               onCancel={() => setShowAddPanel(false)}
             />
@@ -653,10 +684,12 @@ const App: React.FC = () => {
     return <ErrorOverlay error={globalError} />;
   }
   return (
-    <SpeakerProvider>
-      <AppContent />
-      <ScrollToTop />
-    </SpeakerProvider>
+    <ErrorBoundary>
+      <SpeakerProvider>
+        <AppContent />
+        <ScrollToTop />
+      </SpeakerProvider>
+    </ErrorBoundary>
   );
 };
 
