@@ -2,41 +2,28 @@
 
  This document tracks proposed refactors and enhancements to the frontend for improved maintainability, consistency, and developer experience. Each section represents a discrete improvement and its current status.
 
- ## Adopt a Data-Fetching Library
- **Status**: In Progress
- **Description**: Replace ad-hoc `useEffect`/`fetch` patterns (e.g., `useImages`, `PathPicker`, `useProgress`) with a dedicated data-fetching library that offers:
-   - Built-in caching and deduplication
-   - Stale-while-revalidate and polling support
-   - Explicit loading and error states
-   - Manual cache invalidation (e.g., on SSE or mutation events)
+ ## Phase 1: React Query Migration
+ **Status**: Abandoned
+ **Historic Summary**:
+ - Originally, we manually migrated core data-fetching endpoints (images, dialogs, dirs, progress, default path, speakers, reorder, delete) to React Query hooks for caching, polling, and invalidation.
+ - Completed migrations:
+   • `useGetProgressQuery` (progress polling)
+   • `useGetImagesQuery` & `useGetDialogsQuery` (images + dialogs)
+   • `useGetDirsQuery` (directory picker)
+   • `useGetDefaultPathQuery` (initial path)
+   • `useGetSpeakersQuery` & `useSetSpeakersMutation` (speaker config)
+   • `useSetImageDialogMutation` (dialog save)
+   • `useReorderImageMutation` (image reorder)
+   • `useDeleteImageMutation` (delete image)
+ - Abandoned because maintaining manual types/hooks proved brittle and high-overhead; superseded by automated, spec-driven codegen (Phase 2).
 
-### Decision
- After evaluating our options, we have selected **React Query (TanStack Query)** because:
-   - Declarative `useQuery`/`useMutation` hooks with built-in loading and error states
-   - Automated caching, background refetching, and polling (`refetchInterval`)
-   - Manual cache invalidation for SSE/mutations via `queryClient.invalidateQueries`
-   - Excellent TypeScript support and DevTools for debugging
-
- **Not Selected**:
-   - SWR: minimal but requires manual polling/invalidation and lacks built-in mutation cache handling
-   - RTK Query: powerful but introduces Redux boilerplate without existing Redux usage
-   - Custom `useFetch`: insufficient feature set compared to well-tested libraries
-
-### Progress Tracker
- - [x] React Query installation & setup
- - [x] `useProgress` migration
- - [x] `useImages` migration
- - [x] `PathPicker` migration
- - [x] Dialog queries & mutations
- - [x] Default path query
- - [x] Speaker config queries & mutations
- - [ ] Other API queries/mutations
- - [ ] Code cleanup (remove legacy hooks)
-
-### Next Phase: OpenAPI-Driven Codegen Pipeline
+## Phase 2: OpenAPI-Driven Codegen Pipeline
 We will introduce an OpenAPI-based process to auto-generate TypeScript types and React Query hooks from the backend API spec, eliminating manual typing and syncing overhead.
 
-#### Proposed Steps
+### Decision (Phase 2)
+We will adopt an OpenAPI-based codegen approach to auto-generate TypeScript types and React Query hooks, removing manual sync.
+
+### Proposed Steps (Phase 2)
  - [ ] Define and maintain an up-to-date OpenAPI (Swagger) specification for all `/api` endpoints.
  - [ ] Add a codegen configuration (e.g., OpenAPI Generator or `openapi-typescript-codegen`) to generate:
      - TypeScript interfaces for request and response payloads.
@@ -46,11 +33,13 @@ We will introduce an OpenAPI-based process to auto-generate TypeScript types and
  - [ ] Automate codegen execution in `package.json` scripts and CI (e.g., `npm run generate:api`).
  - [ ] Update documentation to describe how to regenerate types/hooks after backend changes.
 
-#### Stage Tracker
- - [ ] OpenAPI spec drafted and reviewed.
- - [ ] Codegen toolchain installed and configured.
- - [ ] Initial codegen run (types & hooks generated).
- - [ ] Integration of generated hooks in core components.
+### Stage Tracker (Phase 2)
+ - [x] OpenAPI spec drafted and reviewed.
+ - [x] Codegen toolchain installed and configured.
+ - [x] Initial codegen run (generated types/hooks for images, dialogs, dirs, progress, default path, speakers, dialog save, reorder, delete).
+ - [x] Integration of generated hooks in core components (useImages, PathPicker, useProgress, useGetDefaultPath, useSetImageDialog, useReorderImage, useDeleteImage).
+ - [ ] Extend OpenAPI spec and codegen to cover remaining endpoints (descriptions, history, Forge operations, models, loras, ping).
+ - [ ] Remove all manual React Query hooks and retire `services/api.ts` layer.
  - [ ] CI pipeline updated to run codegen on changes.
 
  ## Extract a Generic Data-Fetching Hook or Switch to React Query

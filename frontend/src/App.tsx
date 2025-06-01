@@ -16,6 +16,7 @@ import HeaderControls from './components/HeaderControls';
 import DirectoryManagementModal from './components/DirectoryManagementModal';
 import { useGetDefaultPathQuery, useSetImageDialogMutation } from './api';
 import { uploadImages } from './services/api';
+import { useDeleteImageMutation } from './api';
 import Img2ImgPanel from './components/forge/Img2ImgPanel';
 import ExtrasPanel from './components/forge/ExtrasPanel';
 import RegionEditor from './components/forge/RegionEditor';
@@ -191,15 +192,12 @@ const AppContent: React.FC = () => {
   }, [zoomLevel]);
 
   // Remove and hide image handlers
-  const removeImage = async (id: string) => {
-    const query = path ? `?path=${encodeURIComponent(path)}` : '';
-    try {
-      const res = await fetch(`/api/images/${encodeURIComponent(id)}${query}`, { method: 'DELETE' });
-      if (!res.ok) console.error('Delete failed:', res.status);
-    } catch (err) {
-      console.error('Error deleting image:', err);
-    }
-    refresh();
+  const deleteImageMutation = useDeleteImageMutation({
+    onSuccess: () => refresh(),
+    onError: (err: any) => console.error('Error deleting image:', err)
+  });
+  const removeImage = (id: string) => {
+    deleteImageMutation.mutate({ id, path });
   };
   const hideImage = (id: string) => {
     setHiddenIDs((prev) => [...prev, id]);

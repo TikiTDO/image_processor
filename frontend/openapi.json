@@ -26,8 +26,93 @@
           }
         }
       }
+    },
+    "/api/images/{id}/dialog": {
+    "get": {
+      "operationId": "getImageDialog",
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "responses": {
+        "200": {
+          "description": "Dialog entries",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dialog": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["dialog"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "operationId": "setImageDialog",
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "dialog": { "type": "array", "items": { "type": "string" } }
+              },
+              "required": ["dialog"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": { "description": "Dialog saved" }
+      }
     }
-  },
+    },
+    "/api/images/{id}/reorder": {
+      "post": {
+        "operationId": "reorderImage",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prev_id": { "type": ["string", "null"] },
+                  "next_id": { "type": ["string", "null"] }
+                },
+                "required": ["prev_id", "next_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reorder complete" }
+        }
+      }
+    },
+    "/api/images/{id}": {
+      "delete": {
+        "operationId": "deleteImage",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Image deleted" }
+        }
+      }
+    },
     "/api/path": {
       "get": {
         "operationId": "getDefaultPath",
@@ -49,6 +134,7 @@
         }
       }
     }
+  },
   "components": {
     "schemas": {
       "ImageMeta": {

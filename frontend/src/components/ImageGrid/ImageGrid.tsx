@@ -13,7 +13,8 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableItem from '../SortableItem';
-import { ImageMeta, reorderImage } from '../../services/api';
+import { ImageMeta } from '../../services/api';
+import { useReorderImageMutation } from '../../api';
 
 interface ImageGridProps {
   images: ImageMeta[];
@@ -66,6 +67,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }),
   );
 
+  const reorderMutation = useReorderImageMutation();
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over) return;
@@ -78,12 +80,17 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       const next = newIndex < tempImages.length - 1 ? tempImages[newIndex + 1].id : null;
       // Optimistic UI update
       onReorderComplete(active.id as string, prev, next);
-      // Call reorder API, handle errors
-      reorderImage(active.id as string, prev, next, path).catch((err) => {
-        console.error('Error reordering image:', err);
-        alert(`Failed to reorder image: ${err}`);
-        onReorderError && onReorderError();
-      });
+      // Call generated reorder mutation, handle errors
+      reorderMutation.mutate(
+        { id: active.id as string, prev_id: prev, next_id: next, path },
+        {
+          onError: (err: any) => {
+            console.error('Error reordering image:', err);
+            alert(`Failed to reorder image: ${err}`);
+            onReorderError && onReorderError();
+          }
+        }
+      );
     }
   };
 
