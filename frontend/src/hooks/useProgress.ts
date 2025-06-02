@@ -22,7 +22,6 @@ export function useProgress(
     queryKey: ['progress', skipCurrent],
     queryFn: () => getProgress(skipCurrent),
     refetchInterval: 1000,
-    keepPreviousData: true,
     select: (data) => data,
   });
   return { data, error, loading };

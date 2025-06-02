@@ -26,8 +26,8 @@ export function useImages(path: string) {
   });
 
   useSSE('/api/updates', () => {
-    void queryClient.invalidateQueries(imagesKey);
-    void queryClient.invalidateQueries(dialogsKey);
+    void queryClient.invalidateQueries({ queryKey: imagesKey });
+    void queryClient.invalidateQueries({ queryKey: dialogsKey });
   });
 
   return {

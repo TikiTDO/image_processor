@@ -34,13 +34,14 @@ We will adopt an OpenAPI-based codegen approach to auto-generate TypeScript type
  - [ ] Update documentation to describe how to regenerate types/hooks after backend changes.
 
 ### Stage Tracker (Phase 2)
- - [x] OpenAPI spec drafted and reviewed.
- - [x] Codegen toolchain installed and configured.
- - [x] Initial codegen run (generated types/hooks for images, dialogs, dirs, progress, default path, speakers, dialog save, reorder, delete).
- - [x] Integration of generated hooks in core components (useImages, PathPicker, useProgress, useGetDefaultPath, useSetImageDialog, useReorderImage, useDeleteImage).
- - [ ] Extend OpenAPI spec and codegen to cover remaining endpoints (descriptions, history, Forge operations, models, loras, ping).
- - [ ] Remove all manual React Query hooks and retire `services/api.ts` layer.
- - [ ] CI pipeline updated to run codegen on changes.
+- [x] OpenAPI spec drafted and reviewed.
+- [x] Codegen toolchain installed and configured (switched to `typescript-axios`).
+- [x] Initial codegen run generated TypeScript models under `src/api/`.
+- [x] Developed `services/api.ts` for REST wrapper using fetch/Axios.
+- [x] Refactored core data fetching hooks/components (`useImages`, `useProgress`, `PathPicker`, `App.tsx`, `SpeakerContext`, `ImageGrid`) to use new `services/api.ts` + React Query v5 API.
+- [x] Added `npm run typecheck` (TS type validation).
+- [ ] Extend OpenAPI spec and codegen to cover remaining endpoints (history, descriptions, Forge operations).
+- [ ] Automate codegen in CI pipeline.
 
  ## Extract a Generic Data-Fetching Hook or Switch to React Query
  **Status**: Proposed

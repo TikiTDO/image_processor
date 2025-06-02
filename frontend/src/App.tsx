@@ -30,6 +30,8 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
 }
 
 const AppContent: React.FC = () => {
+  const queryClient = useQueryClient();
+
   // Zoom level persisted in sessionStorage, seeded from localStorage
   const STORAGE_ZOOM_KEY = 'zoomLevel';
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
@@ -157,7 +159,7 @@ const AppContent: React.FC = () => {
   const dialogMutation = useMutation({
     mutationFn: ({ id, dialog }: { id: string; dialog: string[] }) =>
       apiSetImageDialog(id, dialog, path),
-    onSuccess: () => queryClient.invalidateQueries(['dialogs', path]),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey:['dialogs', path] }),
   });
   // Debounced save for dialog edits (1s)
   const saveDialogDebounced = useMemo(
@@ -181,7 +183,7 @@ const AppContent: React.FC = () => {
     }
   }, [defaultPath, path]);
   // For new updates, refresh images
-  useSSE('/api/updates', refresh);
+  useSSE('/api/updates', () => { void refresh(); });
   // Persist path to sessionStorage and localStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem(STORAGE_PATH_KEY, path);
@@ -315,7 +317,7 @@ const AppContent: React.FC = () => {
         dialogPreviewMap={dialogPreviewMap}
         // Optimistic reorder: update local state immediately
         onReorderComplete={(movedId, prevId, nextId) => {
-          setImages((prevImgs) => {
+          setImages((prevImgs = []) => {
             const imgs = [...prevImgs];
             const oldIndex = imgs.findIndex((img) => img.id === movedId);
             if (oldIndex === -1) return prevImgs;

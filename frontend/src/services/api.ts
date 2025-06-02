@@ -7,7 +7,7 @@ import {
   ProgressResponse,
   SwitchModelParams,
 } from '../types/forge';
-import { HistoryEntry, LoraInfo, ModelInfo } from '../api';
+import type { HistoryEntry, LoraInfo, ModelInfo } from '../types/forge';
 
 // Metadata for an image
 export interface ImageMeta {

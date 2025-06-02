@@ -45,7 +45,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, url, size, dialogLine, 
   const LONG_DELAY = 600;
   const MOVE_THRESHOLD = 5;
   const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const longPressTimer = useRef<number>();
+  const longPressTimer = useRef<number | undefined>(undefined);
   const longPressTriggered = useRef(false);
   const handleImgTouchStart = (e: React.TouchEvent) => {
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };

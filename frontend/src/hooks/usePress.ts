@@ -9,14 +9,14 @@ export interface UsePressOptions {
 }
 
 export function usePress({ onClick, onLongPress, onContextMenu, longPressDelay = 500, moveThreshold = 5 }: UsePressOptions) {
-  const initialX = useRef(0);
-  const initialY = useRef(0);
-  const longPressTimeout = useRef<number>();
-  const longPressTriggered = useRef(false);
-  const dragging = useRef(false);
+  const initialX = useRef<number>(0);
+  const initialY = useRef<number>(0);
+  const longPressTimeout = useRef<number | undefined>(undefined);
+  const longPressTriggered = useRef<boolean>(false);
+  const dragging = useRef<boolean>(false);
 
   const clear = () => {
-    if (longPressTimeout.current) {
+    if (longPressTimeout.current !== undefined) {
       window.clearTimeout(longPressTimeout.current);
       longPressTimeout.current = undefined;
     }

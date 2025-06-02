@@ -27,7 +27,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onClose }) => {
           <option key={m.name} value={m.name}>{m.name}</option>
         ))}
       </select>
-      <button onClick={handleSwitch}>Switch</n+      </button>
+      <button onClick={handleSwitch}>Switch</button>
       <button onClick={onClose}>Cancel</button>
     </div>
   );

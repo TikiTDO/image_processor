@@ -31,7 +31,7 @@ export const SpeakerProvider: React.FC<SpeakerProviderProps> = ({ children }) =>
   });
   const saveMutation = useMutation({
     mutationFn: setSpeakers,
-    onSuccess: () => queryClient.invalidateQueries(['speakers']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['speakers'] }),
   });
   const { speaker_colors: colors, speaker_names: names } = data;
 
