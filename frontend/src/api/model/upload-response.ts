@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface UploadResponse
+ */
+export interface UploadResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof UploadResponse
+     */
+    'uploaded': number;
+}
+

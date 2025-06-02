@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ImageDescription
+ */
+export interface ImageDescription {
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageDescription
+     */
+    'description': string;
+}
+

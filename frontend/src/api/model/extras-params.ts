@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ExtrasParams
+ */
+export interface ExtrasParams {
+    /**
+     * 
+     * @type {string}
+     * @memberof ExtrasParams
+     */
+    'operation': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ExtrasParams
+     */
+    'image': string;
+}
+

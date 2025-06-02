@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ModelInfo
+ */
+export interface ModelInfo {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelInfo
+     */
+    'model_name': string;
+}
+

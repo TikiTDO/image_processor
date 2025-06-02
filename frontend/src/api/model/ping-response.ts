@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface PingResponse
+ */
+export interface PingResponse {
+    /**
+     * 
+     * @type {string}
+     * @memberof PingResponse
+     */
+    'status': string;
+}
+

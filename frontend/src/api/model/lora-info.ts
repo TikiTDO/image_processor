@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface LoraInfo
+ */
+export interface LoraInfo {
+    /**
+     * 
+     * @type {string}
+     * @memberof LoraInfo
+     */
+    'name': string;
+}
+

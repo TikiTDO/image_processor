@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface GetImageDialog200Response
+ */
+export interface GetImageDialog200Response {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof GetImageDialog200Response
+     */
+    'dialog': Array<string>;
+}
+

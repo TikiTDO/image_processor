@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ReorderImageRequest
+ */
+export interface ReorderImageRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ReorderImageRequest
+     */
+    'prev_id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ReorderImageRequest
+     */
+    'next_id': string;
+}
+

@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface HistoryEntry
+ */
+export interface HistoryEntry {
+    /**
+     * 
+     * @type {string}
+     * @memberof HistoryEntry
+     */
+    'timestamp': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof HistoryEntry
+     */
+    'url': string;
+}
+

@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ExtrasBatchParams
+ */
+export interface ExtrasBatchParams {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ExtrasBatchParams
+     */
+    'operations': Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ExtrasBatchParams
+     */
+    'images': Array<string>;
+}
+

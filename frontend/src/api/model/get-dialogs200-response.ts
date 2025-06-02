@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface GetDialogs200Response
+ */
+export interface GetDialogs200Response {
+    /**
+     * 
+     * @type {{ [key: string]: Array<string>; }}
+     * @memberof GetDialogs200Response
+     */
+    'dialogs': { [key: string]: Array<string>; };
+}
+

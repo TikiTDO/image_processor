@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface GetDefaultPath200Response
+ */
+export interface GetDefaultPath200Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof GetDefaultPath200Response
+     */
+    'path': string;
+}
+

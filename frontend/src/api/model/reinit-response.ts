@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./model";
+
+/**
+ * 
+ * @export
+ * @interface ReinitResponse
+ */
+export interface ReinitResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof ReinitResponse
+     */
+    'renamed': number;
+}
+
