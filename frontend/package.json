@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:e2e": "playwright test",
-    "generate:api": "docker run --rm -v $PWD:/local -w /local openapitools/openapi-generator-cli:v7.13.0 generate -i openapi.json -g typescript-axios -o src/api --additional-properties=apiPackage=api,modelPackage=model,supportsES6=true,withSeparateModelsAndApi=true,modelPropertyNaming=original,prettify=false,useSingleRequestParameter=true"
+    "generate:api": "docker run --rm -v $PWD:/local -w /local openapitools/openapi-generator-cli:v7.13.0 generate -i openapi.json -g typescript-axios -o src/api --additional-properties=apiPackage=api,modelPackage=model,supportsES6=true,withSeparateModelsAndApi=true,modelPropertyNaming=original,prettify=false,useSingleRequestParameter=true",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
