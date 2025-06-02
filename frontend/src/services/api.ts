@@ -109,6 +109,16 @@ export async function setImageDialog(id: string, dialog: string[], path?: string
     body: JSON.stringify({ dialog }),
   });
 }
+
+/**
+ * Delete an image by ID with optional path filter.
+ * @param id Image identifier to delete
+ * @param path Optional directory path query
+ */
+export async function deleteImage(id: string, path?: string): Promise<void> {
+  const query = path ? `?path=${encodeURIComponent(path)}` : '';
+  await fetch(`/api/images/${encodeURIComponent(id)}${query}`, { method: 'DELETE' });
+}
 // Fetch raw description (EXIF ImageDescription) for an image
 export async function getImageDescription(id: string, path?: string): Promise<string> {
   const query = path ? `?path=${encodeURIComponent(path)}` : '';

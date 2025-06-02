@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useImages } from './hooks/useImages';
 import './App.css';
 import { useSSE } from './hooks/useSSE';
@@ -14,9 +13,8 @@ import ErrorOverlay from './components/ErrorOverlay';
 import ScrollToTop from './components/ScrollToTop';
 import HeaderControls from './components/HeaderControls';
 import DirectoryManagementModal from './components/DirectoryManagementModal';
-import { useGetDefaultPathQuery, useSetImageDialogMutation } from './api';
-import { uploadImages } from './services/api';
-import { useDeleteImageMutation } from './api';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
+import { getDefaultPath, setImageDialog as apiSetImageDialog, deleteImage as apiDeleteImage, uploadImages } from './services/api';
 import Img2ImgPanel from './components/forge/Img2ImgPanel';
 import ExtrasPanel from './components/forge/ExtrasPanel';
 import RegionEditor from './components/forge/RegionEditor';
@@ -155,11 +153,11 @@ const AppContent: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedId, images]);
-  // Mutation for saving dialog entries via generated hook
-  const setDialogMutation = useSetImageDialogMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries(['dialogs', path]);
-    }
+  // Mutation for saving dialog entries
+  const dialogMutation = useMutation({
+    mutationFn: ({ id, dialog }: { id: string; dialog: string[] }) =>
+      apiSetImageDialog(id, dialog, path),
+    onSuccess: () => queryClient.invalidateQueries(['dialogs', path]),
   });
   // Debounced save for dialog edits (1s)
   const saveDialogDebounced = useMemo(
@@ -168,11 +166,15 @@ const AppContent: React.FC = () => {
         dialogMutation.mutate({ id: selectedId, dialog: dlg });
       }
     }, 1000),
-    [dialogMutation]
+    [dialogMutation, selectedId, path]
   );
 
-  // Fetch default path when none is set via generated hook
-  const { data: defaultPath = '' } = useGetDefaultPathQuery(undefined, { enabled: path === '' });
+  // Fetch default path when none is set
+  const { data: defaultPath = '' } = useQuery<string, Error>({
+    queryKey: ['defaultPath'],
+    queryFn: () => getDefaultPath(),
+    enabled: path === ''
+  });
   useEffect(() => {
     if (path === '' && defaultPath) {
       setPath(defaultPath);
@@ -192,12 +194,13 @@ const AppContent: React.FC = () => {
   }, [zoomLevel]);
 
   // Remove and hide image handlers
-  const deleteImageMutation = useDeleteImageMutation({
+  const deleteImageMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => apiDeleteImage(id, path),
     onSuccess: () => refresh(),
-    onError: (err: any) => console.error('Error deleting image:', err)
+    onError: (err: any) => console.error('Error deleting image:', err),
   });
   const removeImage = (id: string) => {
-    deleteImageMutation.mutate({ id, path });
+    deleteImageMutation.mutate({ id });
   };
   const hideImage = (id: string) => {
     setHiddenIDs((prev) => [...prev, id]);
@@ -211,7 +214,7 @@ const AppContent: React.FC = () => {
     if (suppressClicks.current) return;
     // On closing, save any dialog edits in edit mode
     if (mode === 'dialog' && selectedId && descMode === 'dialog') {
-      setImageDialog(selectedId, selectedDialog, path)
+      apiSetImageDialog(selectedId, selectedDialog, path)
         .then(() => refreshDialogs())
         .catch((err) => {
           console.error('Error saving dialog on close:', err);
@@ -235,7 +238,7 @@ const AppContent: React.FC = () => {
         const initial = ['0:'];
         setSelectedDialog(initial);
         setDescMode('dialog');
-        setImageDialog(selectedId, initial, path).catch((err) =>
+        apiSetImageDialog(selectedId, initial, path).catch((err) =>
           console.error('Error initializing dialog:', err)
         );
       } else {
@@ -386,7 +389,9 @@ const AppContent: React.FC = () => {
                 History
               </button>
             </div>
+            )}
             {/* Mode-driven sidebar: view vs dialog */}
+            
             {mode === 'view' && selectedDialog.length > 0 && (
               <div className="dialog-sidebar">
                 <div className="dialog-read">

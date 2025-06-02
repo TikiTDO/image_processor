@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DefaultService, type ImageMeta } from '../api';
+import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { getImages, getImageDialogs, type ImageMeta } from '../services/api';
 import { useSSE } from './useSSE';
 
 /**
@@ -13,11 +13,17 @@ import { useSSE } from './useSSE';
 export function useImages(path: string) {
   const queryClient = useQueryClient();
 
-  const imagesKey = ['images', path] as const;
-  const dialogsKey = ['dialogs', path] as const;
+  const imagesKey: QueryKey = ['images', path];
+  const dialogsKey: QueryKey = ['dialogs', path];
 
-  const imagesQuery = useQuery(imagesKey, () => DefaultService.getImages(path));
-  const dialogsQuery = useQuery(dialogsKey, () => DefaultService.getDialogs(path));
+  const imagesQuery = useQuery<ImageMeta[], Error>({
+    queryKey: imagesKey,
+    queryFn: () => getImages(path),
+  });
+  const dialogsQuery = useQuery<Record<string, string[]>, Error>({
+    queryKey: dialogsKey,
+    queryFn: () => getImageDialogs(path),
+  });
 
   useSSE('/api/updates', () => {
     void queryClient.invalidateQueries(imagesKey);
@@ -26,10 +32,10 @@ export function useImages(path: string) {
 
   return {
     images: imagesQuery.data ?? [],
-    dialogs: dialogsQuery.data?.dialogs ?? {},
+    dialogs: dialogsQuery.data ?? {},
     refresh: imagesQuery.refetch,
     refreshDialogs: dialogsQuery.refetch,
     setImages: (updater: ImageMeta[] | ((old?: ImageMeta[]) => ImageMeta[])) =>
-      queryClient.setQueryData(imagesKey, updater),
+      queryClient.setQueryData<ImageMeta[]>(imagesKey, updater),
   };
 }

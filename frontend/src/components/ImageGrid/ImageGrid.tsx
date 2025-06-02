@@ -13,8 +13,8 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableItem from '../SortableItem';
-import { ImageMeta } from '../../services/api';
-import { useReorderImageMutation } from '../../api';
+import { ImageMeta, reorderImage } from '../../services/api';
+import { useMutation } from '@tanstack/react-query';
 
 interface ImageGridProps {
   images: ImageMeta[];
@@ -45,6 +45,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   path,
   bustMap,
   onReorderComplete,
+  onReorderError,
   onItemClick,
   onRemoveImage,
   onHideImage,
@@ -67,7 +68,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }),
   );
 
-  const reorderMutation = useReorderImageMutation();
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, prevId, nextId }: { id: string; prevId: string | null; nextId: string | null }) =>
+      reorderImage(id, prevId, nextId, path),
+  });
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over) return;
@@ -82,7 +86,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       onReorderComplete(active.id as string, prev, next);
       // Call generated reorder mutation, handle errors
       reorderMutation.mutate(
-        { id: active.id as string, prev_id: prev, next_id: next, path },
+        { id: active.id as string, prevId: prev, nextId: next },
         {
           onError: (err: any) => {
             console.error('Error reordering image:', err);

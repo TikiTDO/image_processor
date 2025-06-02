@@ -1,4 +1,6 @@
-import { useGetProgressQuery, ProgressResponse } from '../api';
+import { useQuery } from '@tanstack/react-query';
+import { getProgress } from '../services/api';
+import type { ProgressResponse } from '../types/forge';
 
 /**
  * Hook to fetch SD-Forge progress data with automatic 1s polling.
@@ -16,9 +18,12 @@ export function useProgress(
     data = null,
     error = null,
     isLoading: loading,
-  } = useGetProgressQuery(
-    { skipCurrentImage: skipCurrent },
-    { refetchInterval: 1000, keepPreviousData: true }
-  );
+  } = useQuery<{ current_image: string; progress: number; eta_relative: number }, Error, ProgressResponse>({
+    queryKey: ['progress', skipCurrent],
+    queryFn: () => getProgress(skipCurrent),
+    refetchInterval: 1000,
+    keepPreviousData: true,
+    select: (data) => data,
+  });
   return { data, error, loading };
 }

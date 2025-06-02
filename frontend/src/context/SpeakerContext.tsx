@@ -24,8 +24,13 @@ export const SpeakerProvider: React.FC<SpeakerProviderProps> = ({ children }) =>
     data = defaults,
     isLoading,
     error,
-  } = useQuery<SpeakerMeta, Error>(['speakers'], getSpeakers, { initialData: defaults });
-  const saveMutation = useMutation(setSpeakers, {
+  } = useQuery<SpeakerMeta, Error>({
+    queryKey: ['speakers'],
+    queryFn: getSpeakers,
+    initialData: defaults,
+  });
+  const saveMutation = useMutation({
+    mutationFn: setSpeakers,
     onSuccess: () => queryClient.invalidateQueries(['speakers']),
   });
   const { speaker_colors: colors, speaker_names: names } = data;

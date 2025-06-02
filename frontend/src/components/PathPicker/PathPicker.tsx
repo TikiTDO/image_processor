@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useGetDirsQuery, DirEntry } from '../../api';
+import { useQuery } from '@tanstack/react-query';
+import { getDirs } from '../../services/api';
+import type { DirEntry } from '../../services/api';
 
 interface PathPickerProps {
   path: string;
@@ -8,10 +10,14 @@ interface PathPickerProps {
 
 const PathPicker: React.FC<PathPickerProps> = ({ path, onChange }) => {
   const [open, setOpen] = useState(false);
-  const dirsQuery = useGetDirsQuery({ path }, { enabled: open });
+  const dirsQuery = useQuery<DirEntry[], Error>({
+    queryKey: ['dirs', path],
+    queryFn: () => getDirs(path),
+    enabled: open,
+  });
   const entries: DirEntry[] = dirsQuery.data ?? [];
   const loading = dirsQuery.isLoading;
-  const error = dirsQuery.error;
+  const error = dirsQuery.error as Error | null;
   const ref = useRef<HTMLDivElement>(null);
 
   // React Query handles fetching when 'open' becomes true
